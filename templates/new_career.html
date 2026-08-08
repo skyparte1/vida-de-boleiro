@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="intro"><p class="eyebrow">NOVA CARREIRA</p><h1>O primeiro passo para a sua história.</h1><p>Seu país define o mercado inicial. O jogo sugere três clubes, quase sempre de menor expressão.</p></section>
+<form class="card form" method="post" id="career-form">
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
+  <label>Nome<input name="name" required maxlength="60" placeholder="Ex.: Luis Fernando"></label>
+  <label>Idade<input name="age" type="number" min="16" max="23" value="17" required></label>
+  <label>País<select name="country" id="country" required><option value="">Selecione</option>{% for country in countries %}<option value="{{ country }}">{{ country }}</option>{% endfor %}</select></label>
+  <label>Posição<select name="position"><option>Goleiro</option><option>Zagueiro</option><option>Lateral</option><option>Volante</option><option>Meia</option><option>Ponta</option><option>Centroavante</option></select></label>
+  <fieldset><legend>Perna boa</legend><label class="choice"><input type="radio" name="dominant_foot" value="Direita" checked> Direita</label><label class="choice"><input type="radio" name="dominant_foot" value="Esquerda"> Esquerda</label></fieldset>
+  <section id="club-box" class="club-box" hidden><p>Escolha seu clube inicial</p><small id="league-note"></small><div id="club-options"></div></section>
+  <button id="start-button" disabled>Começar carreira</button>
+</form>
+{% endblock %}

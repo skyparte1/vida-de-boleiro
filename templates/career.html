@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="career-head"><div><p class="eyebrow">TEMPORADA {{ player.season }}/{{ player.season + 1 }}</p><h1>{{ player.name }}</h1><p>{{ player.position }} · {{ player.club }} · {{ player.country }}</p></div><div class="overall">{{ player.overall }}<span>OVR</span></div></section>
+<section class="grid">
+  <article class="card"><h2>Perfil</h2><dl><dt>Idade</dt><dd>{{ player.age }} anos</dd><dt>Perna boa</dt><dd>{{ player.dominant_foot }}</dd><dt>Perna fraca</dt><dd>{{ player.weak_foot }}/99</dd><dt>Ambidestria</dt><dd>{{ "Sim" if player.ambidextrous else "Em desenvolvimento" }}</dd></dl></article>
+  <article class="card"><h2>Carreira</h2><dl><dt>Jogos</dt><dd>{{ player.matches }}</dd><dt>Gols</dt><dd>{{ player.goals }}</dd><dt>Assistências</dt><dd>{{ player.assists }}</dd><dt>Patrimônio</dt><dd>€ {{ "{:,}".format(player.money).replace(',', '.') }}</dd></dl></article>
+  <article class="card event"><p class="eyebrow">ÚLTIMO EVENTO</p><p>{{ player.last_event }}</p></article>
+</section>
+<form method="post" action="{{ url_for('advance', player_id=request.view_args.player_id) }}"><button>Avançar temporada →</button></form>
+{% endblock %}
