@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block body_class %}page-final{% endblock %}
+{% block content %}
+<section class="final-hero">
+    <p class="eyebrow">O FIM DE UMA HISTÓRIA</p>
+    <div>
+        <div>
+            <h1>{{ career.player.name }}</h1>
+            <p>{{ career.player.country }} · {{ career.player.position }} · {{ career.retirement_reason }}</p>
+        </div>
+        <div class="overall-display"><span>OVR MÁXIMO</span><strong>{{ career.player.max_overall }}</strong><small>Aos
+                {{ career.player.age }} anos</small></div>
+    </div>
+</section>
+<section class="legacy-strip">
+    <article><span>JOGOS</span><strong>{{ career.player.matches }}</strong></article>
+    <article><span>GOLS</span><strong>{{ career.player.goals }}</strong></article>
+    <article><span>ASSISTÊNCIAS</span><strong>{{ career.player.assists }}</strong></article>
+    <article><span>TÍTULOS</span><strong>{{ career.titles|length }}</strong></article>
+    <article><span>VALOR MÁXIMO</span><strong>€ {{ "{:,}".format(career.player.max_market_value).replace(',', '.')
+            }}</strong></article>
+</section>
+<div class="final-layout">
+    <section class="panel-card final-summary">
+        <p class="eyebrow">LEGADO</p>
+        <h2>Uma carreira para lembrar.</h2>
+        <p>O atleta encerrou a trajetória com overall máximo de <strong>{{ career.player.max_overall }}</strong>, valor
+            de mercado recorde de <strong>€ {{ "{:,}".format(career.player.max_market_value).replace(',', '.')
+                }}</strong> e passou por {{ career.clubs|length }} clube{% if career.clubs|length != 1 %}s{% endif %}.
+        </p>
+        <dl>
+            <div>
+                <dt>PERNA DOMINANTE</dt>
+                <dd>{{ career.player.dominant_foot }}</dd>
+            </div>
+            <div>
+                <dt>AMBIDESTRO</dt>
+                <dd>{{ 'Sim' if career.player.ambidextrous else 'Não' }}</dd>
+            </div>
+            <div>
+                <dt>VALOR FINAL</dt>
+                <dd>€ {{ "{:,}".format(career.player.market_value).replace(',', '.') }}</dd>
+            </div>
+        </dl>
+    </section>
+    <section class="panel-card club-legacy">
+        <div class="card-title">
+            <div>
+                <p class="eyebrow">POR ONDE PASSOU</p>
+                <h2>Clubes e estatísticas</h2>
+            </div>
+        </div>
+        <div class="club-table">
+            <div class="table-head">
+                <span>Clube</span><span>Temp.</span><span>J</span><span>G</span><span>A</span><span>Títulos</span></div>
+            {% for name, stats in career.clubs.items() %}<div><strong>{{ name }}</strong><span>{{ stats.seasons
+                    }}</span><span>{{ stats.matches }}</span><span>{{ stats.goals }}</span><span>{{ stats.assists
+                    }}</span><span>{{ stats.titles|length }}</span></div>{% endfor %}
+        </div>
+    </section>
+</div>
+<div class="final-actions"><a class="primary-action" href="{{ url_for('download_final_card') }}"><span>Baixar card como
+            imagem</span><span aria-hidden="true">↓</span></a><a class="text-action"
+        href="{{ url_for('new_career') }}">Criar outra carreira →</a></div>
+{% endblock %}

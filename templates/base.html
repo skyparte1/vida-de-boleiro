@@ -3,12 +3,25 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#07150e">
     <title>Vida de Boleiro</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='flag-icons/css/flag-icons.css') }}">
   </head>
-  <body>
-    <header><a href="{{ url_for('index') }}">⚽ VIDA DE BOLEIRO</a></header>
-    <main>{% block content %}{% endblock %}</main>
+  <body class="{% block body_class %}{% endblock %}">
+    <header class="site-header">
+      <div class="site-header__inner">
+        <a class="brand" href="{{ url_for('new_career') }}" aria-label="Vida de Boleiro, início">
+          <span class="brand__mark" aria-hidden="true">VB</span><span>VIDA DE BOLEIRO</span>
+        </a>
+        <nav class="main-nav" aria-label="Navegação principal">
+          <a href="{{ url_for('new_career') }}">Nova carreira</a>
+          {% if career is defined and career.status == 'active' %}<a href="{{ url_for('career') }}" aria-current="page">Carreira</a>{% endif %}
+        </nav>
+      </div>
+    </header>
+    <main class="app-main">{% block content %}{% endblock %}</main>
+    <footer class="site-footer"><span>VIDA DE BOLEIRO</span><span>Uma história por vez.</span></footer>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
   </body>
 </html>

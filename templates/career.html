@@ -1,10 +1,136 @@
 {% extends "base.html" %}
+{% block body_class %}page-career{% endblock %}
 {% block content %}
-<section class="career-head"><div><p class="eyebrow">TEMPORADA {{ player.season }}/{{ player.season + 1 }}</p><h1>{{ player.name }}</h1><p>{{ player.position }} · {{ player.club }} · {{ player.country }}</p></div><div class="overall">{{ player.overall }}<span>OVR</span></div></section>
-<section class="grid">
-  <article class="card"><h2>Perfil</h2><dl><dt>Idade</dt><dd>{{ player.age }} anos</dd><dt>Perna boa</dt><dd>{{ player.dominant_foot }}</dd><dt>Perna fraca</dt><dd>{{ player.weak_foot }}/99</dd><dt>Ambidestria</dt><dd>{{ "Sim" if player.ambidextrous else "Em desenvolvimento" }}</dd></dl></article>
-  <article class="card"><h2>Carreira</h2><dl><dt>Jogos</dt><dd>{{ player.matches }}</dd><dt>Gols</dt><dd>{{ player.goals }}</dd><dt>Assistências</dt><dd>{{ player.assists }}</dd><dt>Patrimônio</dt><dd>€ {{ "{:,}".format(player.money).replace(',', '.') }}</dd></dl></article>
-  <article class="card event"><p class="eyebrow">ÚLTIMO EVENTO</p><p>{{ player.last_event }}</p></article>
+<section class="career-hero">
+  <div class="career-identity">
+    <p class="eyebrow">{{ career.calendar.year }} · TEMPORADA {{ career.calendar.season }} · SEMANA {{
+      career.calendar.week }}</p>
+    <h1>{{ career.player.name }}</h1>
+    <p class="career-identity__meta"><span>{{ career.player.position }}</span><span>{{ career.club }}</span><span>{{
+        career.player.country }}</span></p>
+  </div>
+  <div class="overall-display"><span>OVERALL</span><strong>{{ career.player.overall }}</strong><small>Máximo {{
+      career.player.max_overall }}</small></div>
 </section>
-<form method="post" action="{{ url_for('advance', player_id=request.view_args.player_id) }}"><button>Avançar temporada →</button></form>
+<nav class="section-nav" aria-label="Seções da carreira"><a class="is-active" href="#painel">Painel</a><a
+    href="#estatisticas">Estatísticas</a><a href="#historico">Histórico</a></nav>
+<div class="dashboard-layout" id="painel">
+  <div class="dashboard-main">
+    {% if career.pending_event %}<section class="event-card" aria-labelledby="event-title">
+      <div class="event-card__top"><span class="status-tag status-tag--warning">DECISÃO PENDENTE</span><span>Semana {{
+          career.calendar.week }}</span></div>
+      <h2 id="event-title">{{ career.pending_event.title }}</h2>
+      <p>{{ career.pending_event.text }}</p>
+      <form method="post" action="{{ url_for('decide') }}" class="event-choices">{% for choice in
+        career.pending_event.choices %}<button name="choice" value="{{ choice.id }}">{{ choice.label }} <span
+            aria-hidden="true">→</span></button>{% endfor %}</form>
+      <p class="event-lock" role="status">Resolva este acontecimento para continuar a carreira.</p>
+    </section>
+    {% else %}<section class="advance-card">
+      <div>
+        <p class="eyebrow">PRÓXIMO PASSO</p>
+        <h2>Continue construindo a sua história.</h2>
+        <p>A semana {{ career.calendar.week + 1 }} pode trazer treino, partida ou uma mudança de rumo.</p>
+      </div>
+      <form method="post" action="{{ url_for('advance_career_week') }}"><button class="primary-action"><span>Avançar
+            carreira</span><span aria-hidden="true">→</span></button></form>
+    </section>{% endif %}
+    <section class="panel-card status-card">
+      <div class="card-title">
+        <div>
+          <p class="eyebrow">STATUS ATUAL</p>
+          <h2>Condição do atleta</h2>
+        </div><span class="status-tag">EM ATIVIDADE</span>
+      </div>
+      <div class="status-bars">
+        <div>
+          <div><span>Forma</span><strong>{{ career.player.form }}</strong></div><progress
+            value="{{ career.player.form }}" max="100">{{ career.player.form }}</progress>
+        </div>
+        <div>
+          <div><span>Condicionamento</span><strong>{{ 100 - career.player.fatigue }}</strong></div><progress
+            class="progress-warning" value="{{ 100 - career.player.fatigue }}" max="100">{{ 100 - career.player.fatigue
+            }}</progress>
+        </div>
+        <div>
+          <div><span>Moral</span><strong>{{ career.player.morale }}</strong></div><progress class="progress-info"
+            value="{{ career.player.morale }}" max="100">{{ career.player.morale }}</progress>
+        </div>
+      </div>
+    </section>
+    <section class="stat-section" id="estatisticas">
+      <div class="card-title">
+        <div>
+          <p class="eyebrow">NÚMEROS DA CARREIRA</p>
+          <h2>Estatísticas</h2>
+        </div>
+      </div>
+      <div class="stat-grid">
+        <article><span>JOGOS</span><strong>{{ career.player.matches }}</strong></article>
+        <article><span>GOLS</span><strong>{{ career.player.goals }}</strong></article>
+        <article><span>ASSISTÊNCIAS</span><strong>{{ career.player.assists }}</strong></article>
+        <article><span>TÍTULOS</span><strong>{{ career.titles|length }}</strong></article>
+      </div>
+    </section>
+    <section class="panel-card timeline-card" id="historico">
+      <div class="card-title">
+        <div>
+          <p class="eyebrow">DIÁRIO DE CARREIRA</p>
+          <h2>Últimos acontecimentos</h2>
+        </div><span class="timeline-year">{{ career.calendar.year }}</span>
+      </div>
+      <ol class="timeline">{% for item in career.history[:7] %}<li
+          class="timeline__item {% if item.kind in ['título', 'transferência', 'aposentadoria'] %}is-major{% endif %}">
+          <span class="timeline__marker" aria-hidden="true"></span>
+          <div><small>{{ item.kind|upper }}</small>
+            <p>{{ item.text }}</p>
+          </div>
+        </li>{% endfor %}</ol>
+    </section>
+    {% if career.player.age >= 30 %}<form class="retire" method="post" action="{{ url_for('retire_career') }}">
+      <button>Encerrar carreira</button></form>{% endif %}
+  </div>
+  <aside class="dashboard-side">
+    <section class="player-card">
+      <div class="player-card__top"><span class="shirt-number">—</span>
+        <div>
+          <p class="eyebrow">JOGADOR</p><strong>{{ career.player.name }}</strong><small>{{ career.player.age }} anos ·
+            {{ career.player.dominant_foot }}</small>
+        </div>
+      </div>
+      <dl>
+        <div>
+          <dt>CLUBE</dt>
+          <dd>{{ career.club }}</dd>
+        </div>
+        <div>
+          <dt>POSIÇÃO</dt>
+          <dd>{{ career.player.position }}</dd>
+        </div>
+        <div>
+          <dt>VALOR DE MERCADO</dt>
+          <dd>€ {{ "{:,}".format(career.player.market_value).replace(',', '.') }}</dd>
+        </div>
+        <div>
+          <dt>MAIOR VALOR</dt>
+          <dd>€ {{ "{:,}".format(career.player.max_market_value).replace(',', '.') }}</dd>
+        </div>
+        <div>
+          <dt>SALÁRIO</dt>
+          <dd>Não informado</dd>
+        </div>
+        <div>
+          <dt>CARTÕES</dt>
+          <dd>Não informado</dd>
+        </div>
+      </dl>
+    </section>
+    <section class="match-note">
+      <p class="eyebrow">PARTIDAS</p>
+      <h2>Registro de atuação</h2>
+      <p>As suas participações aparecem no diário de carreira conforme as semanas avançam.</p><span>Sem placar detalhado
+        nesta versão</span>
+    </section>
+  </aside>
+</div>
 {% endblock %}
