@@ -330,28 +330,8 @@ if (countryGrid && country) {
       note.textContent = `Liga inicial usada pelo jogo: ${data.clubs[0].league_country}`;
       data.clubs.forEach((club, index) => {
         const tier = club.size === 'small' ? 'clube de menor expressão' : club.size === 'medium' ? 'clube médio' : 'clube grande';
-        const initials = club.name.split(/\s+/).map((word) => word[0]).join('').slice(0, 3).toUpperCase();
-        const crest = club.logo
-          ? `<img class="club-choice__logo" src="/static/club_logos/${encodeURI(club.logo)}" alt="Escudo do ${club.name}" onerror="this.outerHTML='<span class=&quot;club-choice__crest&quot; aria-hidden=&quot;true&quot;>${initials}</span>'">`
-          : `<span class="club-choice__crest" aria-hidden="true">${initials}</span>`;
-        options.insertAdjacentHTML('beforeend', `
-          <label class="club-choice${index === 0 ? ' is-selected' : ''}">
-            <input class="club-choice__radio" type="radio" name="club_id" value="${club.id}" ${index === 0 ? 'checked' : ''}>
-            <span class="club-choice__selected" aria-hidden="true">✓</span>
-            <span class="club-choice__visual">${crest}</span>
-            <span class="club-choice__content">
-              <small class="club-choice__eyebrow">PRIMEIRO CONTRATO</small>
-              <strong>${club.name}</strong>
-              <small class="club-choice__tier">${tier}</small>
-            </span>
-            <span class="club-choice__cta">Selecionar <i aria-hidden="true">→</i></span>
-          </label>`);
-      });
-      options.querySelectorAll('.club-choice__radio').forEach((radio) => {
-        radio.addEventListener('change', () => {
-          options.querySelectorAll('.club-choice').forEach((card) => card.classList.remove('is-selected'));
-          radio.closest('.club-choice')?.classList.add('is-selected');
-        });
+        const crest = club.logo ? `<img class="club-choice__logo" src="/static/club_logos/${encodeURI(club.logo)}" alt="Escudo do ${club.name}">` : '';
+        options.insertAdjacentHTML('beforeend', `<label class="club-choice">${crest}<span><input type="radio" name="club_id" value="${club.id}" ${index === 0 ? 'checked' : ''}> <strong>${club.name}</strong><small>${tier}</small></span></label>`);
       });
       clubBox.hidden = false;
       startButton.disabled = false;
@@ -399,7 +379,7 @@ if (positionInput) {
     window.requestAnimationFrame(() => button.classList.add('is-pulsing'));
     positionInput.value = button.dataset.position;
     button.setAttribute('aria-pressed', 'true');
-    feedback.textContent = button.dataset.position;
+    feedback.textContent = `Posição selecionada: ${button.dataset.position}.`;
     if (profile) profile.textContent = button.dataset.profile || 'Perfil de jogo selecionado.';
     setPreview('#preview-position', button.dataset.position, 'Posição a definir');
   }));
@@ -484,26 +464,6 @@ if (dashboard) {
     tags.appendChild(tag);
   });
   sessionStorage.setItem(metricKey, JSON.stringify(current));
-
-  // Confete sutil para eventos marcados como celebração (ex.: título). Não interfere na leitura.
-  const celebration = document.querySelector('.event-card.is-celebration');
-  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (celebration && !reduceMotion) {
-    const layer = document.createElement('div');
-    layer.className = 'confetti-layer';
-    const colors = ['#b9ef54', '#ffc857', '#6fb9ff', '#f3f8f2'];
-    for (let i = 0; i < 40; i += 1) {
-      const piece = document.createElement('span');
-      piece.className = 'confetti-piece';
-      piece.style.left = `${Math.random() * 100}%`;
-      piece.style.background = colors[i % colors.length];
-      piece.style.animationDuration = `${2.2 + Math.random() * 1.4}s`;
-      piece.style.animationDelay = `${Math.random() * 0.5}s`;
-      layer.appendChild(piece);
-    }
-    document.body.appendChild(layer);
-    setTimeout(() => layer.remove(), 4200);
-  }
 
   const links = Array.from(document.querySelectorAll('.section-nav a'));
   const sections = links.map((link) => document.querySelector(link.getAttribute('href'))).filter(Boolean);

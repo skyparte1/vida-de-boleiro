@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block body_class %}page-create{% endblock %}
+{% block content %}
+<section class="create-hero">
+  <div>
+    <p class="eyebrow">NOVA CARREIRA · 01</p>
+    <h1>Todo grande nome<br>teve um primeiro clube.</h1>
+    <p class="lead">Crie um atleta de 16 anos, escolha o ponto de partida e comece a escrever uma história no futebol.
+    </p>
+  </div>
+  <aside class="player-preview" aria-live="polite">
+    <p class="eyebrow">PRÉVIA DO JOGADOR</p>
+    <div class="player-preview__number">16</div>
+    <div><strong id="preview-name">Novo talento</strong><span id="preview-position">Posição a definir</span></div>
+    <dl>
+      <div>
+        <dt>PAÍS</dt>
+        <dd id="preview-country">—</dd>
+      </div>
+      <div>
+        <dt>PERNA BOA</dt>
+        <dd id="preview-foot">Direita</dd>
+      </div>
+    </dl>
+  </aside>
+</section>
+<form class="create-form" method="post" action="{{ url_for('start_career') }}" id="career-form">
+  {% if error %}<p class="form-message form-message--error" role="alert">{{ error }}</p>{% endif %}
+  <section class="form-panel">
+    <div class="panel-heading"><span>01</span>
+      <div>
+        <h2>Identidade</h2>
+        <p>As informações básicas do seu atleta.</p>
+      </div>
+    </div>
+    <div class="form-grid"><label>Nome do jogador<input name="name" id="player-name" required maxlength="60"
+          placeholder="Ex.: Luis Fernando" autocomplete="name"></label>
+      <div class="fixed-age"><span>IDADE INICIAL</span><strong>16 anos</strong><small>Todos os atletas começam na
+          base.</small></div>
+      <div class="field-wide country-picker">
+        <div class="field-label">
+          <span>Nacionalidade</span>
+          <small>Escolha o país que seu jogador representará.</small>
+        </div>
+
+        <input type="search" id="country-search" class="country-search" placeholder="Pesquisar país..."
+          autocomplete="off">
+
+        <input type="hidden" name="country" id="country" required>
+
+        <div class="country-grid" id="country-grid">
+          {% for confederation, members in countries.items() %}
+          {% for country in members %}
+          <button type="button" class="country-option" data-country="{{ country }}">
+            <span class="country-flag" aria-hidden="true"></span>
+            <span class="country-name"></span>
+            <span class="country-check" aria-hidden="true">✓</span>
+          </button>
+          {% endfor %}
+          {% endfor %}
+        </div>
+
+        <p class="selection-feedback" id="country-feedback">
+          Nenhum país selecionado.
+        </p>
+      </div>
+    </div>
+  </section>
+  <section class="form-panel">
+    <div class="panel-heading"><span>02</span>
+      <div>
+        <h2>Perfil de jogo</h2>
+        <p>Defina onde ele começa a carreira.</p>
+      </div>
+    </div>
+    <input type="hidden" name="position" id="position" required>
+    <section class="position-picker" aria-labelledby="position-title">
+      <div class="picker-copy">
+        <p id="position-title">Posição em campo</p><small>Clique no setor em que o jogador atua.</small>
+        <p id="position-feedback" class="selection-feedback" aria-live="polite">Nenhuma posição selecionada.</p>
+        <p id="position-profile" class="position-profile">Escolha uma posição para ver o perfil do atleta.</p>
+      </div>
+      <div class="pitch" role="group" aria-label="Escolha a posição no campo">{% for code, label, profile, side, depth in
+        [('GOL','Goleiro','Protege a meta e organiza a defesa.',50,91),('LE','Lateral esquerdo','Defende o corredor e apoia o ataque.',18,74),('ZAG','Zagueiro','Dá segurança e leitura ao sistema defensivo.',39,77),('ZAG','Zagueiro','Dá segurança e leitura ao sistema defensivo.',61,77),('LD','Lateral direito','Defende o corredor e apoia o ataque.',82,74),('VOL','Volante','Equilibra a equipe entre marcação e saída de bola.',50,64),('ME','Meia esquerdo','Cria jogadas partindo do lado esquerdo.',24,51),('MC','Meio-campista','Conecta os setores e controla o ritmo.',50,48),('MD','Meia direito','Cria jogadas partindo do lado direito.',76,51),('MEI','Meia ofensivo','Encontra espaços para criar e finalizar.',50,36),('PE','Ponta esquerda','Acelera o ataque pelo lado esquerdo.',18,30),('CA','Centroavante','Finaliza as jogadas e ocupa a área.',50,20),('PD','Ponta direita','Acelera o ataque pelo lado direito.',82,30)] %}<button class="position-button"
+          type="button" data-position="{{ label }}" style="left:{{ side }}%;top:{{ depth }}%"
+          data-profile="{{ profile }}" aria-label="{{ label }}" aria-pressed="false">{{ code }}</button>{% endfor %}</div>
+    </section>
+    <div class="profile-options">
+    <fieldset class="foot-selector">
+      <legend>Perna dominante</legend><label class="choice"><input type="radio" name="dominant_foot" value="Direita"
+          checked> <span>Direita</span></label><label class="choice"><input type="radio" name="dominant_foot"
+          value="Esquerda"> <span>Esquerda</span></label>
+    </fieldset>
+    <fieldset class="foot-selector">
+      <legend>Modo de jogo</legend>
+      <label class="choice"><input type="radio" name="mode" value="realistic" checked> <span>Modo Realista</span></label>
+      <label class="choice"><input type="radio" name="mode" value="accelerated"> <span>Modo Acelerado</span></label>
+    </fieldset>
+    </div>
+  </section>
+  <section id="club-box" class="form-panel club-panel" hidden>
+    <div class="panel-heading"><span>03</span>
+      <div>
+        <h2>Primeiro contrato</h2>
+        <p id="league-note">Escolha um dos clubes sugeridos.</p>
+      </div>
+    </div>
+    <div id="club-options" class="club-options"></div>
+  </section>
+  <button class="primary-action" id="start-button" disabled><span>Começar carreira</span><span
+      aria-hidden="true">→</span></button>
+</form>
+{% endblock %}
+
