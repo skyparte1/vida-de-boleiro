@@ -322,10 +322,16 @@ if (countryGrid && country) {
       });
       if (!response.ok) throw new Error('Não foi possível carregar os clubes.');
       const data = await response.json();
+      if (!data.clubs.length) {
+        note.textContent = data.message || 'Ainda não há clubes cadastrados para este país.';
+        clubBox.hidden = false;
+        return;
+      }
       note.textContent = `Liga inicial usada pelo jogo: ${data.clubs[0].league_country}`;
       data.clubs.forEach((club, index) => {
         const tier = club.size === 'small' ? 'clube de menor expressão' : club.size === 'medium' ? 'clube médio' : 'clube grande';
-        options.insertAdjacentHTML('beforeend', `<label class="club-choice"><input type="radio" name="club" value="${club.name}" ${index === 0 ? 'checked' : ''}> <strong>${club.name}</strong><small>${tier}</small></label>`);
+        const crest = club.logo ? `<img class="club-choice__logo" src="/static/club_logos/${encodeURI(club.logo)}" alt="Escudo do ${club.name}">` : '';
+        options.insertAdjacentHTML('beforeend', `<label class="club-choice">${crest}<span><input type="radio" name="club_id" value="${club.id}" ${index === 0 ? 'checked' : ''}> <strong>${club.name}</strong><small>${tier}</small></span></label>`);
       });
       clubBox.hidden = false;
       startButton.disabled = false;
@@ -363,11 +369,18 @@ if (countryGrid && country) {
 const positionInput = document.querySelector('#position');
 if (positionInput) {
   const feedback = document.querySelector('#position-feedback');
+  const profile = document.querySelector('#position-profile');
   document.querySelectorAll('.position-button').forEach((button) => button.addEventListener('click', () => {
-    document.querySelectorAll('.position-button').forEach((item) => item.classList.remove('selected'));
+    document.querySelectorAll('.position-button').forEach((item) => {
+      item.classList.remove('selected', 'is-pulsing');
+      item.setAttribute('aria-pressed', 'false');
+    });
     button.classList.add('selected');
+    window.requestAnimationFrame(() => button.classList.add('is-pulsing'));
     positionInput.value = button.dataset.position;
+    button.setAttribute('aria-pressed', 'true');
     feedback.textContent = `Posição selecionada: ${button.dataset.position}.`;
+    if (profile) profile.textContent = button.dataset.profile || 'Perfil de jogo selecionado.';
     setPreview('#preview-position', button.dataset.position, 'Posição a definir');
   }));
 }
@@ -388,11 +401,77 @@ if (careerForm) careerForm.addEventListener('submit', (event) => {
     document.querySelector('#position-feedback').textContent = 'Escolha uma posição no campo para continuar.';
     return;
   }
+  sessionStorage.removeItem('vdb:career-metrics');
   const submit = careerForm.querySelector('button[type="submit"], #start-button');
   if (submit) { submit.classList.add('is-loading'); submit.disabled = true; submit.querySelector('span')?.replaceChildren('Preparando carreira...'); }
 });
 
-document.querySelectorAll('form:not(#career-form)').forEach((form) => form.addEventListener('submit', () => {
-  const button = form.querySelector('button');
-  if (button) { button.classList.add('is-loading'); button.disabled = true; }
+document.querySelectorAll('form:not(#career-form)').forEach((form) => form.addEventListener('submit', (event) => {
+  // Não desabilite o submitter aqui: navegadores podem excluí-lo do POST.
+  // O backend protege o evento contra reenvio pelo seu identificador único.
+  event.submitter?.classList.add('is-loading');
+  if (form.classList.contains('event-choices')) {
+    form.classList.add('is-resolving');
+    event.submitter?.classList.add('is-selected');
+  }
 }));
+
+const dashboard = document.querySelector('.page-career');
+if (dashboard) {
+  const metricKey = 'vdb:career-metrics';
+  let previous = {};
+  try { previous = JSON.parse(sessionStorage.getItem(metricKey) || '{}'); } catch (_) {}
+  const current = {};
+  document.querySelectorAll('[data-metric][data-value]').forEach((element) => {
+    current[element.dataset.metric] = Number(element.dataset.value);
+  });
+
+  const formatValue = (value, format) => format === 'currency'
+    ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(value)
+    : String(Math.round(value));
+  const animateNumber = (element, target) => {
+    const old = Number(previous[element.closest('[data-metric]')?.dataset.metric] ?? target);
+    if (old === target) return;
+    const started = performance.now();
+    const duration = 360;
+    const frame = (time) => {
+      const progress = Math.min(1, (time - started) / duration);
+      const value = old + (target - old) * (1 - (1 - progress) ** 3);
+      element.textContent = formatValue(value, element.dataset.format);
+      if (progress < 1) requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+  };
+  document.querySelectorAll('[data-count]').forEach((element) => {
+    const target = Number(element.dataset.count);
+    const metric = element.closest('[data-metric]')?.dataset.metric;
+    if (metric && Object.hasOwn(previous, metric)) animateNumber(element, target);
+  });
+  requestAnimationFrame(() => document.querySelectorAll('.status-progress span').forEach((bar) => bar.classList.add('is-ready')));
+
+  const labels = { form: 'Forma', fitness: 'Condicionamento', morale: 'Moral', overall: 'Overall', market_value: 'Valor de mercado' };
+  if (Object.hasOwn(previous, 'overall') && previous.overall !== current.overall) {
+    document.querySelector('.overall-display')?.classList.add('metric-changed');
+  }
+  const tags = document.querySelector('.change-tags');
+  if (tags) Object.entries(current).forEach(([key, value]) => {
+    if (!labels[key] || !Object.hasOwn(previous, key) || previous[key] === value) return;
+    const delta = value - previous[key];
+    const tag = document.createElement('span');
+    tag.className = `change-tag ${delta > 0 ? 'is-positive' : 'is-negative'}`;
+    const display = key === 'market_value' ? formatValue(Math.abs(delta), 'currency') : Math.abs(delta);
+    tag.textContent = `${labels[key]} ${delta > 0 ? '+' : '−'}${display}`;
+    tags.appendChild(tag);
+  });
+  sessionStorage.setItem(metricKey, JSON.stringify(current));
+
+  const links = Array.from(document.querySelectorAll('.section-nav a'));
+  const sections = links.map((link) => document.querySelector(link.getAttribute('href'))).filter(Boolean);
+  if ('IntersectionObserver' in window && sections.length) {
+    const observer = new IntersectionObserver((entries) => entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      links.forEach((link) => link.classList.toggle('is-active', link.getAttribute('href') === `#${entry.target.id}`));
+    }), { rootMargin: '-25% 0px -60% 0px', threshold: 0.01 });
+    sections.forEach((section) => observer.observe(section));
+  }
+}

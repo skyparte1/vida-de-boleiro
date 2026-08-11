@@ -1,17 +1,64 @@
+import random
+
 from flask import Flask, abort, redirect, render_template, request, session, url_for
 
-from football_data import build_starting_clubs, countries, is_known_club
+from database import get_club, get_club_by_name, get_clubs_by_country, get_country_by_name
+from football_data import countries
 from session_store import create, discard, get
-from simulation import advance_week, create_career, final_card_svg, resolve_decision, retire
+from simulation import advance_career, create_career, ensure_career_state, final_card_svg, resolve_decision, retire
 
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "local-development-only-change-this-before-deploying"
 
 
+DATABASE_COUNTRY_NAMES = {
+    "Argentina": "Argentina", "Belgium": "Bélgica", "Brazil": "Brasil", "England": "Inglaterra",
+    "France": "França", "Germany": "Alemanha", "Italy": "Itália", "Netherlands": "Países Baixos",
+    "Portugal": "Portugal", "Spain": "Espanha",
+}
+
+
+def database_country(country):
+    name = DATABASE_COUNTRY_NAMES.get(country)
+    return get_country_by_name(name) if name else None
+
+
+def club_size(club):
+    score = (club["reputation"] + club["strength"]) / 2
+    return "small" if score < 56 else "medium" if score < 73 else "big"
+
+
+def starting_clubs_from_database(country):
+    record = database_country(country)
+    if not record:
+        return [], None
+    available = get_clubs_by_country(record["code"])
+    weighted = {"small": 85, "medium": 14, "big": 1}
+    chosen = []
+    while available and len(chosen) < 3:
+        sizes = [club_size(item) for item in available]
+        selected = random.choices(available, weights=[weighted[size] for size in sizes], k=1)[0]
+        available.remove(selected)
+        chosen.append({"id": selected["id"], "name": selected["name"], "size": club_size(selected), "league_country": record["name"], "logo": selected["logo"]})
+    return chosen, record
+
+
+def current_club(career):
+    """Resolve a referência do clube sem duplicar seus dados na carreira."""
+    record = get_club(career.get("club_id")) if career.get("club_id") else None
+    if record and record["name"] == career["club"]:
+        return record
+    country = database_country(career["player"]["country"])
+    record = get_club_by_name(career["club"], country["code"]) if country else None
+    career["club_id"] = record["id"] if record else None
+    return record
+
+
 def active_career():
     career_id = session.get("career_id")
-    return get(career_id) if career_id else None
+    career = get(career_id) if career_id else None
+    return ensure_career_state(career) if career else None
 
 
 @app.get("/")
@@ -21,17 +68,25 @@ def new_career():
 
 @app.post("/career/start")
 def start_career():
-    country = request.form["country"]
-    club = request.form["club"]
+    country = request.form.get("country", "")
     known_countries = {member for members in countries().values() for member in members}
-    if country not in known_countries or not is_known_club(club) or not request.form.get("position"):
+    mode = request.form.get("mode", "realistic")
+    country_record = database_country(country)
+    try:
+        club_id = int(request.form.get("club_id", ""))
+    except ValueError:
+        club_id = None
+    club = get_club(club_id) if club_id else None
+    if not club and request.form.get("club") and country_record:
+        club = get_club_by_name(request.form["club"], country_record["code"])
+    if country not in known_countries or not country_record or not club or club["country_code"] != country_record["code"] or not request.form.get("position") or mode not in {"realistic", "accelerated"}:
         abort(400)
     old_id = session.pop("career_id", None)
     if old_id:
         discard(old_id)
     career = create_career(
         name=request.form["name"], country=country, position=request.form["position"],
-        dominant_foot=request.form["dominant_foot"], starting_club=club,
+        dominant_foot=request.form["dominant_foot"], starting_club=club["name"], club_id=club["id"], mode=mode,
     )
     session["career_id"] = create(career)
     return redirect(url_for("career"))
@@ -44,7 +99,7 @@ def career():
         return redirect(url_for("new_career"))
     if current["status"] == "finished":
         return redirect(url_for("final_card"))
-    return render_template("career.html", career=current)
+    return render_template("career.html", career=current, current_club=current_club(current))
 
 
 @app.post("/career/advance-week")
@@ -53,7 +108,7 @@ def advance_career_week():
     if not current:
         return redirect(url_for("new_career"))
     if not current["pending_event"]:
-        advance_week(current)
+        advance_career(current)
     return redirect(url_for("career"))
 
 
@@ -62,7 +117,8 @@ def decide():
     current = active_career()
     if not current or not current["pending_event"]:
         abort(400)
-    resolve_decision(current, request.form.get("choice", ""))
+    if not resolve_decision(current, request.form.get("choice", ""), request.form.get("event_id") or None):
+        abort(400)
     return redirect(url_for("career"))
 
 
@@ -71,6 +127,8 @@ def retire_career():
     current = active_career()
     if not current:
         return redirect(url_for("new_career"))
+    if current["player"]["age"] < 30:
+        abort(400)
     retire(current, "Você decidiu encerrar a carreira profissional.")
     return redirect(url_for("final_card"))
 
@@ -99,10 +157,12 @@ def download_final_card():
 @app.post("/api/starting-clubs")
 def starting_clubs():
     country = request.form.get("country", "")
-    try:
-        return {"clubs": build_starting_clubs(country)}
-    except KeyError:
+    if country not in {member for members in countries().values() for member in members}:
         abort(400)
+    clubs, country_record = starting_clubs_from_database(country)
+    if not country_record:
+        return {"clubs": [], "league_country": None, "message": "Ainda não há clubes cadastrados para este país."}
+    return {"clubs": clubs, "league_country": country_record["name"]}
 
 
 if __name__ == "__main__":

@@ -77,22 +77,26 @@
     <section class="position-picker" aria-labelledby="position-title">
       <div class="picker-copy">
         <p id="position-title">Posição em campo</p><small>Clique no setor em que o jogador atua.</small>
-        <p id="position-feedback" class="selection-feedback">Nenhuma posição selecionada.</p>
+        <p id="position-feedback" class="selection-feedback" aria-live="polite">Nenhuma posição selecionada.</p>
+        <p id="position-profile" class="position-profile">Escolha uma posição para ver o perfil do atleta.</p>
       </div>
-      <div class="pitch" role="group" aria-label="Escolha a posição no campo">{% for code, label, side, depth in
-        [('GOL','Goleiro',50,91),('LE','Lateral
-        esquerdo',18,74),('ZAG','Zagueiro',39,77),('ZAG','Zagueiro',61,77),('LD','Lateral
-        direito',82,74),('VOL','Volante',50,64),('ME','Meia esquerdo',24,51),('MC','Meio-campista',50,48),('MD','Meia
-        direito',76,51),('MEI','Meia ofensivo',50,36),('PE','Ponta
-        esquerda',18,30),('CA','Centroavante',50,20),('PD','Ponta direita',82,30)] %}<button class="position-button"
+      <div class="pitch" role="group" aria-label="Escolha a posição no campo">{% for code, label, profile, side, depth in
+        [('GOL','Goleiro','Protege a meta e organiza a defesa.',50,91),('LE','Lateral esquerdo','Defende o corredor e apoia o ataque.',18,74),('ZAG','Zagueiro','Dá segurança e leitura ao sistema defensivo.',39,77),('ZAG','Zagueiro','Dá segurança e leitura ao sistema defensivo.',61,77),('LD','Lateral direito','Defende o corredor e apoia o ataque.',82,74),('VOL','Volante','Equilibra a equipe entre marcação e saída de bola.',50,64),('ME','Meia esquerdo','Cria jogadas partindo do lado esquerdo.',24,51),('MC','Meio-campista','Conecta os setores e controla o ritmo.',50,48),('MD','Meia direito','Cria jogadas partindo do lado direito.',76,51),('MEI','Meia ofensivo','Encontra espaços para criar e finalizar.',50,36),('PE','Ponta esquerda','Acelera o ataque pelo lado esquerdo.',18,30),('CA','Centroavante','Finaliza as jogadas e ocupa a área.',50,20),('PD','Ponta direita','Acelera o ataque pelo lado direito.',82,30)] %}<button class="position-button"
           type="button" data-position="{{ label }}" style="left:{{ side }}%;top:{{ depth }}%"
-          aria-label="{{ label }}">{{ code }}</button>{% endfor %}</div>
+          data-profile="{{ profile }}" aria-label="{{ label }}" aria-pressed="false">{{ code }}</button>{% endfor %}</div>
     </section>
+    <div class="profile-options">
     <fieldset class="foot-selector">
       <legend>Perna dominante</legend><label class="choice"><input type="radio" name="dominant_foot" value="Direita"
           checked> <span>Direita</span></label><label class="choice"><input type="radio" name="dominant_foot"
           value="Esquerda"> <span>Esquerda</span></label>
     </fieldset>
+    <fieldset class="foot-selector">
+      <legend>Modo de jogo</legend>
+      <label class="choice"><input type="radio" name="mode" value="realistic" checked> <span>Modo Realista</span></label>
+      <label class="choice"><input type="radio" name="mode" value="accelerated"> <span>Modo Acelerado</span></label>
+    </fieldset>
+    </div>
   </section>
   <section id="club-box" class="form-panel club-panel" hidden>
     <div class="panel-heading"><span>03</span>

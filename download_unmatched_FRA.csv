@@ -1,0 +1,22 @@
+﻿club,best_match,score,reason
+AS Monaco,,,no_confident_match
+AS Saint-Étienne,,,no_confident_match
+Angers SCO,,,no_confident_match
+Dijon FCO,Dijon,0.714,no_confident_match
+ESTAC Troyes,Troyes,0.667,no_confident_match
+FC Sochaux-Montbéliard,,,no_confident_match
+Grenoble Foot 38,Grenoble,0.667,no_confident_match
+LOSC Lille,,,no_confident_match
+Montpellier Hérault SC,,,no_confident_match
+OGC Nice,Nice,0.667,no_confident_match
+Olympique Lyonnais,Lyon,0.364,no_confident_match
+Paris Saint-Germain,,,no_confident_match
+RC Lens,Lens,0.727,no_confident_match
+RC Strasbourg Alsace,Strasbourg,0.667,no_confident_match
+Red Star FC,Beveren,0.267,no_confident_match
+Rodez AF,Rodez,0.769,no_confident_match
+Stade Brestois 29,Brest,0.455,no_confident_match
+Stade Lavallois,Laval,0.500,no_confident_match
+Stade Rennais FC,Rennes,0.526,no_confident_match
+US Boulogne CO,Boulogne,0.727,no_confident_match
+USL Dunkerque,,,no_confident_match

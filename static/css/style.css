@@ -106,3 +106,103 @@
     }
 }
 
+/* Escudo do clube atual: arquivo relativo ao diretório static/club_logos. */
+.club-logo {
+    width: 52px;
+    height: 52px;
+    object-fit: contain;
+}
+
+.transfer-candidates {
+    display: grid;
+    gap: 9px;
+    margin-bottom: 9px;
+}
+
+.transfer-candidate {
+    align-items: center;
+    display: flex;
+    gap: 12px;
+}
+
+.transfer-candidate img {
+    height: 42px;
+    object-fit: contain;
+    width: 42px;
+}
+
+.transfer-candidate span { display: grid; gap: 3px; }
+.transfer-candidate small { color: var(--muted); font-size: .75rem; font-weight: 600; }
+
+/* Polimento de interação: mantém a linguagem visual existente. */
+.position-picker { align-items: start; gap: 20px; }
+.picker-copy { align-self: center; max-width: 260px; }
+.position-profile { border-left: 2px solid var(--primary); color: var(--muted); font-size: .82rem; line-height: 1.45; margin: 14px 0 0; padding-left: 10px; }
+.pitch { height: 390px; max-width: 300px; transition: box-shadow .2s ease, transform .2s ease; }
+.pitch:has(.position-button:hover) .position-button:not(:hover):not(.selected) { opacity: .62; }
+.pitch .position-button { transition: transform .18s ease, background .18s ease, box-shadow .18s ease, opacity .18s ease; }
+.pitch .position-button:hover { box-shadow: 0 0 0 5px rgba(185,239,84,.25), 0 7px 16px rgba(0,0,0,.22); transform: translate(-50%, -50%) scale(1.1); }
+.pitch .position-button.selected { box-shadow: 0 0 0 5px rgba(185,239,84,.28), 0 8px 22px rgba(185,239,84,.18); transform: translate(-50%, -50%) scale(1.08); }
+.pitch .position-button.is-pulsing { animation: position-pulse .42s ease-out; }
+.profile-options { display: grid; gap: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 18px; }
+.profile-options .foot-selector { margin: 0; }
+.club-choice { align-items: center; display: flex; gap: 11px; min-height: 76px; transition: border-color .16s ease, background .16s ease, transform .16s ease; }
+.club-choice:hover { border-color: rgba(185,239,84,.65); transform: translateY(-2px); }
+.club-choice > span { display: block; min-width: 0; }
+.club-choice__logo { flex: 0 0 auto; height: 39px; object-fit: contain; width: 39px; }
+
+.page-career .career-hero, .page-career .section-nav, .page-career .dashboard-main > *, .page-career .dashboard-side > * { animation: card-enter .38s both; }
+.page-career .section-nav { animation-delay: .04s; }
+.page-career .dashboard-main > *:nth-child(1) { animation-delay: .08s; }
+.page-career .dashboard-main > *:nth-child(2) { animation-delay: .13s; }
+.page-career .dashboard-main > *:nth-child(3) { animation-delay: .18s; }
+.page-career .dashboard-side > * { animation-delay: .16s; }
+.overall-display.metric-changed, .overall-display:hover { box-shadow: 0 0 0 4px rgba(185,239,84,.08), 0 15px 34px rgba(0,0,0,.18); }
+.change-tags { display: flex; flex-wrap: wrap; gap: 7px; justify-content: flex-end; margin: -8px 0 12px; min-height: 0; }
+.change-tag { animation: tag-enter 1.9s both; border: 1px solid currentColor; border-radius: 999px; font-size: .7rem; font-weight: 850; padding: 4px 8px; }
+.change-tag.is-positive { background: rgba(185,239,84,.11); color: var(--success); }
+.change-tag.is-negative { background: rgba(255,127,127,.1); color: var(--danger); }
+.status-progress { background: #0a1b12; border-radius: 99px; height: 7px; overflow: hidden; width: 100%; }
+.status-progress span { background: var(--success); border-radius: inherit; display: block; height: 100%; transform: scaleX(0); transform-origin: left; transition: transform .62s cubic-bezier(.2,.8,.2,1); width: var(--meter); }
+.status-progress span.is-ready { transform: scaleX(1); }
+.status-progress--warning span { background: var(--warning); }
+.status-progress--info span { background: var(--info); }
+.event-card { animation: event-enter .32s ease-out both; }
+.event-card--match { border-color: rgba(111,185,255,.42); background: linear-gradient(135deg,#17394a,#16291d); }
+.event-card--training { border-color: rgba(185,239,84,.34); background: linear-gradient(135deg,#263c1d,#182619); }
+.event-card--transfer_market, .event-card--transfer_interest { border-color: rgba(185,239,84,.45); }
+.event-card.is-special { box-shadow: 0 0 0 1px rgba(185,239,84,.18), 0 20px 60px rgba(0,0,0,.3), inset 0 1px rgba(185,239,84,.12); }
+.event-choices button { transition: transform .15s ease, border-color .15s ease, background .15s ease, opacity .15s ease; }
+.event-choices button:hover { transform: translateX(3px); }
+.event-choices.is-resolving button:not(.is-selected) { opacity: .58; }
+.event-choices .is-selected { background: rgba(185,239,84,.18); border-color: var(--primary); }
+.match-timeline { display: grid; gap: 0; grid-template-columns: repeat(6, minmax(0, 1fr)); list-style: none; margin: 22px 0 0; padding: 0; }
+.match-timeline li { color: var(--muted); font-size: .65rem; min-width: 0; position: relative; text-align: center; }
+.match-timeline li::before { background: rgba(154,176,160,.42); border: 2px solid var(--surface); border-radius: 50%; content: ''; display: block; height: 10px; margin: 0 auto 7px; position: relative; width: 10px; z-index: 1; }
+.match-timeline li:not(:last-child)::after { background: rgba(154,176,160,.28); content: ''; height: 1px; left: 50%; position: absolute; right: -50%; top: 5px; }
+.match-timeline b, .match-timeline span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.match-timeline b { color: var(--text); font-size: .68rem; }
+.match-timeline li.is-current { color: var(--primary); font-weight: 850; }
+.match-timeline li.is-current::before { background: var(--primary); box-shadow: 0 0 0 4px rgba(185,239,84,.18); }
+
+@keyframes position-pulse { 50% { transform: translate(-50%, -50%) scale(1.18); } }
+@keyframes card-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes event-enter { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes tag-enter { 0% { opacity: 0; transform: translateY(-4px); } 12%, 75% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-3px); } }
+
+@media (max-width: 640px) {
+  .profile-options { grid-template-columns: 1fr; }
+  .picker-copy { max-width: none; }
+  .pitch { height: 360px; max-width: 280px; }
+  .match-timeline { gap: 3px; }
+  .match-timeline span { font-size: .58rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-career .career-hero, .page-career .section-nav, .page-career .dashboard-main > *, .page-career .dashboard-side > *, .event-card, .change-tag, .pitch .position-button.is-pulsing { animation: none !important; }
+  .pitch .position-button:hover, .pitch .position-button.selected { transform: translate(-50%, -50%) !important; }
+  .club-choice:hover { transform: none !important; }
+  .event-choices button:hover { transform: none !important; }
+  .status-progress span { transition-duration: .01ms !important; }
+}
+
