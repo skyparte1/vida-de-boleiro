@@ -3,12 +3,15 @@
 {% block content %}
 <section class="career-hero">
   <div class="career-identity">
-    <p class="eyebrow">{{ career.calendar.date }} · TEMPORADA {{ career.calendar.season }} · {{ 'MODO REALISTA' if career.mode == 'realistic' else 'MODO ACELERADO' }}</p>
+    <p class="eyebrow">{{ career.calendar.date }} · TEMPORADA {{ career.calendar.season }} · {{ 'MODO REALISTA' if
+      career.mode == 'realistic' else 'MODO ACELERADO' }}</p>
     <h1>{{ career.player.name }}</h1>
     <p class="career-identity__meta"><span>{{ career.player.position }}</span><span>{{ career.club }}</span><span>{{
         career.player.country }}</span></p>
   </div>
-  <div class="overall-display" data-metric="overall" data-value="{{ career.player.overall }}"><span>OVERALL</span><strong data-count="{{ career.player.overall }}">{{ career.player.overall }}</strong><small>Máximo {{
+  <div class="overall-display" data-metric="overall" data-value="{{ career.player.overall }}">
+    <span>OVERALL</span><strong data-count="{{ career.player.overall }}">{{ career.player.overall
+      }}</strong><small>Máximo {{
       career.player.max_overall }}</small></div>
 </section>
 <div class="change-tags" aria-live="polite" aria-atomic="true"></div>
@@ -16,22 +19,54 @@
     href="#estatisticas">Estatísticas</a><a href="#historico">Histórico</a></nav>
 <div class="dashboard-layout" id="painel">
   <div class="dashboard-main">
-    {% if career.pending_event %}{% set event_labels = {'training': 'TREINO', 'match': 'PARTIDA', 'recovery': 'RECUPERAÇÃO', 'transfer_market': 'TRANSFERÊNCIA', 'transfer_interest': 'MERCADO', 'season_final': 'FINAL', 'season_summary': 'TEMPORADA'} %}{% set special_events = ['season_final', 'transfer_market'] %}<section class="event-card event-card--{{ career.pending_event.type }} {% if career.pending_event.type in special_events %}is-special{% endif %}" data-event-type="{{ career.pending_event.type }}" aria-labelledby="event-title">
-      <div class="event-card__top"><span class="status-tag status-tag--warning">{{ event_labels.get(career.pending_event.type, 'ACONTECIMENTO') }} · DECISÃO PENDENTE</span><span>Semana {{
+    {% if career.pending_event %}{% set event_labels = {'training': 'TREINO', 'match': 'PARTIDA', 'recovery':
+    'RECUPERAÇÃO', 'transfer_market': 'TRANSFERÊNCIA', 'transfer_interest': 'MERCADO', 'season_final': 'FINAL',
+    'season_summary': 'TEMPORADA'} %}{% set special_events = ['season_final', 'transfer_market'] %}<section
+      class="event-card event-card--{{ career.pending_event.type }} {% if career.pending_event.type in special_events %}is-special{% endif %}"
+      data-event-type="{{ career.pending_event.type }}" aria-labelledby="event-title">
+      <div class="event-card__top"><span class="status-tag status-tag--warning">{{
+          event_labels.get(career.pending_event.type, 'ACONTECIMENTO') }} · DECISÃO PENDENTE</span><span>Semana {{
           career.calendar.week }}</span></div>
       <h2 id="event-title">{{ career.pending_event.title }}</h2>
       <p>{{ career.pending_event.text }}</p>
-      {% if career.pending_event.type == 'match' %}{% set stage = career.pending_event.stage %}{% set match = career.match_state %}<ol class="match-timeline" aria-label="Linha do tempo da partida"><li class="{% if stage == 'pre_match' %}is-current{% endif %}"><b>0'</b><span>Escalação</span></li><li class="{% if stage == 'first_half' %}is-current{% endif %}"><b>15'</b><span>Início</span></li><li class="{% if stage == 'player_moment' %}is-current{% endif %}"><b>{{ 90 - match.minutes if match and match.substitute else 35 }}'</b><span>{% if match and match.goals %}Gol{% elif match and match.assists %}Assistência{% else %}Seu momento{% endif %}</span></li><li class="{% if stage == 'halftime' %}is-current{% endif %}"><b>45'</b><span>Intervalo</span></li><li class="{% if stage == 'second_half' %}is-current{% endif %}"><b>70'</b><span>Segundo tempo</span></li><li class="{% if stage == 'final' %}is-current{% endif %}"><b>90'</b><span>Final</span></li></ol>{% endif %}
-      <form method="post" action="{{ url_for('decide') }}" class="event-choices"><input type="hidden" name="event_id" value="{{ career.pending_event.id }}">{% if career.pending_event.transfer_candidates %}<div class="transfer-candidates">{% for candidate in career.pending_event.transfer_candidates %}<button class="transfer-candidate" name="choice" value="accept:{{ candidate.club_id }}" {% if not candidate.can_complete %}disabled{% endif %}>{% if candidate.logo %}<img src="{{ url_for('static', filename='club_logos/' ~ candidate.logo) }}" alt="Escudo do {{ candidate.name }}">{% endif %}<span><strong>{{ candidate.name }}</strong><small>{{ candidate.competition }}{% if candidate.tier %} · Série {{ candidate.tier }}{% endif %}<br>{{ candidate.country }}</small></span></button>{% endfor %}</div>{% for choice in career.pending_event.choices if not choice.id.startswith('accept:') %}<button name="choice" value="{{ choice.id }}">{{ choice.label }} <span aria-hidden="true">→</span></button>{% endfor %}{% else %}{% for choice in career.pending_event.choices %}<button name="choice" value="{{ choice.id }}">{{ choice.label }} <span aria-hidden="true">→</span></button>{% endfor %}{% endif %}</form>
+      {% if career.pending_event.type == 'match' %}{% set stage = career.pending_event.stage %}{% set match =
+      career.match_state %}<ol class="match-timeline" aria-label="Linha do tempo da partida">
+        <li class="{% if stage == 'pre_match' %}is-current{% endif %}"><b>0'</b><span>Escalação</span></li>
+        <li class="{% if stage == 'first_half' %}is-current{% endif %}"><b>15'</b><span>Início</span></li>
+        <li class="{% if stage == 'player_moment' %}is-current{% endif %}"><b>{{ 90 - match.minutes if match and
+            match.substitute else 35 }}'</b><span>{% if match and match.goals %}Gol{% elif match and match.assists
+            %}Assistência{% else %}Seu momento{% endif %}</span></li>
+        <li class="{% if stage == 'halftime' %}is-current{% endif %}"><b>45'</b><span>Intervalo</span></li>
+        <li class="{% if stage == 'second_half' %}is-current{% endif %}"><b>70'</b><span>Segundo tempo</span></li>
+        <li class="{% if stage == 'final' %}is-current{% endif %}"><b>90'</b><span>Final</span></li>
+      </ol>{% endif %}
+      <form method="post" action="{{ url_for('decide') }}" class="event-choices"><input type="hidden" name="event_id"
+          value="{{ career.pending_event.id }}">{% if career.pending_event.transfer_candidates %}<div
+          class="transfer-candidates">{% for candidate in career.pending_event.transfer_candidates %}<button
+            class="transfer-candidate" name="choice" value="accept:{{ candidate.club_id }}" {% if not
+            candidate.can_complete %}disabled{% endif %}>{% if candidate.logo %}<img
+              src="{{ url_for('static', filename='club_logos/' ~ candidate.logo) }}"
+              alt="Escudo do {{ candidate.name }}">{% endif %}<span><strong>{{ candidate.name }}</strong><small>{{
+                candidate.competition }}{% if candidate.tier %} · Série {{ candidate.tier }}{% endif %}<br>{{
+                candidate.country }}</small></span></button>{% endfor %}</div>{% for choice in
+        career.pending_event.choices if not choice.id.startswith('accept:') %}<button name="choice"
+          value="{{ choice.id }}">{{ choice.label }} <span aria-hidden="true">→</span></button>{% endfor %}{% else %}{%
+        for choice in career.pending_event.choices %}<button name="choice" value="{{ choice.id }}">{{ choice.label }}
+          <span aria-hidden="true">→</span></button>{% endfor %}{% endif %}</form>
       <p class="event-lock" role="status">Resolva este acontecimento para continuar a carreira.</p>
     </section>
     {% else %}<section class="advance-card">
       <div>
         <p class="eyebrow">PRÓXIMO PASSO</p>
-      <h2>{{ 'Continue construindo a sua história.' if career.mode == 'realistic' else 'Simule a próxima temporada.' }}</h2>
-        <p>{{ 'O próximo acontecimento relevante pode trazer treino, partida ou uma mudança de rumo.' if career.mode == 'realistic' else 'Partidas comuns serão processadas e apenas os acontecimentos importantes serão apresentados.' }}</p>
+        <h2>{{ 'Continue construindo a sua história.' if career.mode == 'realistic' else 'Simule a próxima temporada.'
+          }}</h2>
+        <p>{{ 'O próximo acontecimento relevante pode trazer treino, partida ou uma mudança de rumo.' if career.mode ==
+          'realistic' else 'Partidas comuns serão processadas e apenas os acontecimentos importantes serão
+          apresentados.' }}</p>
       </div>
-      <form method="post" action="{{ url_for('advance_career_week') }}"><button class="primary-action"><span>{{ 'Continuar carreira' if career.mode == 'realistic' else 'Simular temporada' }}</span><span aria-hidden="true">→</span></button></form>
+      <form method="post" action="{{ url_for('advance_career_week') }}"><button class="primary-action"><span>{{
+            'Continuar carreira' if career.mode == 'realistic' else 'Simular temporada' }}</span><span
+            aria-hidden="true">→</span></button></form>
     </section>{% endif %}
     <section class="panel-card status-card">
       <div class="card-title">
@@ -42,13 +77,25 @@
       </div>
       <div class="status-bars">
         <div>
-          <div><span>Forma</span><strong data-count="{{ career.player.form }}">{{ career.player.form }}</strong></div><div class="status-progress" role="progressbar" aria-label="Forma" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ career.player.form }}" data-metric="form" data-value="{{ career.player.form }}"><span style="--meter: {{ career.player.form }}%"></span></div>
+          <div><span>Forma</span><strong data-count="{{ career.player.form }}">{{ career.player.form }}</strong></div>
+          <div class="status-progress" role="progressbar" aria-label="Forma" aria-valuemin="0" aria-valuemax="100"
+            aria-valuenow="{{ career.player.form }}" data-metric="form" data-value="{{ career.player.form }}"><span
+              style="--meter: {{ career.player.form }}%"></span></div>
         </div>
         <div>
-          <div><span>Condicionamento</span><strong data-count="{{ 100 - career.player.fatigue }}">{{ 100 - career.player.fatigue }}</strong></div><div class="status-progress status-progress--warning" role="progressbar" aria-label="Condicionamento" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ 100 - career.player.fatigue }}" data-metric="fitness" data-value="{{ 100 - career.player.fatigue }}"><span style="--meter: {{ 100 - career.player.fatigue }}%"></span></div>
+          <div><span>Condicionamento</span><strong data-count="{{ 100 - career.player.fatigue }}">{{ 100 -
+              career.player.fatigue }}</strong></div>
+          <div class="status-progress status-progress--warning" role="progressbar" aria-label="Condicionamento"
+            aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ 100 - career.player.fatigue }}"
+            data-metric="fitness" data-value="{{ 100 - career.player.fatigue }}"><span
+              style="--meter: {{ 100 - career.player.fatigue }}%"></span></div>
         </div>
         <div>
-          <div><span>Moral</span><strong data-count="{{ career.player.morale }}">{{ career.player.morale }}</strong></div><div class="status-progress status-progress--info" role="progressbar" aria-label="Moral" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ career.player.morale }}" data-metric="morale" data-value="{{ career.player.morale }}"><span style="--meter: {{ career.player.morale }}%"></span></div>
+          <div><span>Moral</span><strong data-count="{{ career.player.morale }}">{{ career.player.morale }}</strong>
+          </div>
+          <div class="status-progress status-progress--info" role="progressbar" aria-label="Moral" aria-valuemin="0"
+            aria-valuemax="100" aria-valuenow="{{ career.player.morale }}" data-metric="morale"
+            data-value="{{ career.player.morale }}"><span style="--meter: {{ career.player.morale }}%"></span></div>
         </div>
       </div>
     </section>
@@ -60,10 +107,14 @@
         </div>
       </div>
       <div class="stat-grid">
-        <article data-metric="matches" data-value="{{ career.player.matches }}"><span>JOGOS</span><strong data-count="{{ career.player.matches }}">{{ career.player.matches }}</strong></article>
-        <article data-metric="goals" data-value="{{ career.player.goals }}"><span>GOLS</span><strong data-count="{{ career.player.goals }}">{{ career.player.goals }}</strong></article>
-        <article data-metric="assists" data-value="{{ career.player.assists }}"><span>ASSISTÊNCIAS</span><strong data-count="{{ career.player.assists }}">{{ career.player.assists }}</strong></article>
-        <article data-metric="titles" data-value="{{ career.titles|length }}"><span>TÍTULOS</span><strong data-count="{{ career.titles|length }}">{{ career.titles|length }}</strong></article>
+        <article data-metric="matches" data-value="{{ career.player.matches }}"><span>JOGOS</span><strong
+            data-count="{{ career.player.matches }}">{{ career.player.matches }}</strong></article>
+        <article data-metric="goals" data-value="{{ career.player.goals }}"><span>GOLS</span><strong
+            data-count="{{ career.player.goals }}">{{ career.player.goals }}</strong></article>
+        <article data-metric="assists" data-value="{{ career.player.assists }}"><span>ASSISTÊNCIAS</span><strong
+            data-count="{{ career.player.assists }}">{{ career.player.assists }}</strong></article>
+        <article data-metric="titles" data-value="{{ career.titles|length }}"><span>TÍTULOS</span><strong
+            data-count="{{ career.titles|length }}">{{ career.titles|length }}</strong></article>
       </div>
     </section>
     <section class="panel-card timeline-card" id="historico">
@@ -82,11 +133,14 @@
         </li>{% endfor %}</ol>
     </section>
     {% if career.player.age >= 30 %}<form class="retire" method="post" action="{{ url_for('retire_career') }}">
-      <button>Encerrar carreira</button></form>{% endif %}
+      <button>Encerrar carreira</button>
+    </form>{% endif %}
   </div>
   <aside class="dashboard-side">
     <section class="player-card">
-      <div class="player-card__top">{% if current_club and current_club.logo %}<img class="club-logo" src="{{ url_for('static', filename='club_logos/' ~ current_club.logo) }}" alt="Escudo do {{ current_club.name }}">{% else %}<span class="shirt-number">—</span>{% endif %}
+      <div class="player-card__top">{% if current_club and current_club.logo %}<img class="club-logo"
+          src="{{ url_for('static', filename='club_logos/' ~ current_club.logo) }}"
+          alt="Escudo do {{ current_club.name }}">{% else %}<span class="shirt-number">—</span>{% endif %}
         <div>
           <p class="eyebrow">JOGADOR</p><strong>{{ career.player.name }}</strong><small>{{ career.player.age }} anos ·
             {{ career.player.dominant_foot }}</small>
@@ -103,7 +157,9 @@
         </div>
         <div>
           <dt>VALOR DE MERCADO</dt>
-          <dd data-metric="market_value" data-value="{{ career.player.market_value }}">€ <strong data-count="{{ career.player.market_value }}" data-format="currency">{{ "{:,}".format(career.player.market_value).replace(',', '.') }}</strong></dd>
+          <dd data-metric="market_value" data-value="{{ career.player.market_value }}">€ <strong
+              data-count="{{ career.player.market_value }}" data-format="currency">{{
+              "{:,}".format(career.player.market_value).replace(',', '.') }}</strong></dd>
         </div>
         <div>
           <dt>MAIOR VALOR</dt>

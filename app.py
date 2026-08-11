@@ -4,6 +4,7 @@ from flask import Flask, abort, redirect, render_template, request, session, url
 
 from database import get_club, get_club_by_name, get_clubs_by_country, get_country_by_name
 from football_data import countries
+from github_logo_urls import club_logo_url
 from session_store import create, discard, get
 from simulation import advance_career, create_career, ensure_career_state, final_card_svg, resolve_decision, retire
 
@@ -40,7 +41,11 @@ def starting_clubs_from_database(country):
         sizes = [club_size(item) for item in available]
         selected = random.choices(available, weights=[weighted[size] for size in sizes], k=1)[0]
         available.remove(selected)
-        chosen.append({"id": selected["id"], "name": selected["name"], "size": club_size(selected), "league_country": record["name"], "logo": selected["logo"]})
+        chosen.append({
+            "id": selected["id"], "name": selected["name"], "size": club_size(selected),
+            "league_country": record["name"], "logo": selected["logo"],
+            "logo_url": club_logo_url(selected["logo"]),
+        })
     return chosen, record
 
 
@@ -48,17 +53,33 @@ def current_club(career):
     """Resolve a referência do clube sem duplicar seus dados na carreira."""
     record = get_club(career.get("club_id")) if career.get("club_id") else None
     if record and record["name"] == career["club"]:
+        record["logo_url"] = club_logo_url(record["logo"])
         return record
     country = database_country(career["player"]["country"])
     record = get_club_by_name(career["club"], country["code"]) if country else None
     career["club_id"] = record["id"] if record else None
+    if record:
+        record["logo_url"] = club_logo_url(record["logo"])
     return record
+
+
+def hydrate_event_logo_urls(career):
+    """Completa eventos em sessão criados antes da URL remota existir."""
+    for event in [career.get("pending_event"), *career.get("event_queue", [])]:
+        if not event:
+            continue
+        for candidate in event.get("transfer_candidates", []):
+            candidate.setdefault("logo_url", club_logo_url(candidate.get("logo")))
 
 
 def active_career():
     career_id = session.get("career_id")
     career = get(career_id) if career_id else None
-    return ensure_career_state(career) if career else None
+    if not career:
+        return None
+    career = ensure_career_state(career)
+    hydrate_event_logo_urls(career)
+    return career
 
 
 @app.get("/")

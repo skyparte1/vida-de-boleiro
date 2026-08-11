@@ -34,8 +34,12 @@ def club_logo_url(logo_path: str | None) -> str | None:
     if normalized.startswith(prefix):
         normalized = normalized[len(prefix):]
 
+    parts = normalized.split("/")
+    if not normalized or any(part in {"", ".", ".."} for part in parts):
+        return None
+
     # Mantém as barras, mas escapa espaços/acentos caso existam.
-    escaped = "/".join(quote(part) for part in normalized.split("/"))
+    escaped = "/".join(quote(part) for part in parts)
     return RAW_BASE_URL + escaped
 
 

@@ -331,8 +331,8 @@ if (countryGrid && country) {
       data.clubs.forEach((club, index) => {
         const tier = club.size === 'small' ? 'clube de menor expressão' : club.size === 'medium' ? 'clube médio' : 'clube grande';
         const initials = club.name.split(/\s+/).map((word) => word[0]).join('').slice(0, 3).toUpperCase();
-        const crest = club.logo
-          ? `<img class="club-choice__logo" src="/static/club_logos/${encodeURI(club.logo)}" alt="Escudo do ${club.name}" onerror="this.outerHTML='<span class=&quot;club-choice__crest&quot; aria-hidden=&quot;true&quot;>${initials}</span>'">`
+        const crest = club.logo_url
+          ? `<img class="club-choice__logo" src="${club.logo_url}" alt="Escudo do ${club.name}" onerror="this.outerHTML='<span class=&quot;club-choice__crest&quot; aria-hidden=&quot;true&quot;>${initials}</span>'">`
           : `<span class="club-choice__crest" aria-hidden="true">${initials}</span>`;
         options.insertAdjacentHTML('beforeend', `
           <label class="club-choice${index === 0 ? ' is-selected' : ''}">

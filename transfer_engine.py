@@ -10,6 +10,7 @@ from database import (
     get_clubs_with_competition,
     get_current_competition_for_club,
 )
+from github_logo_urls import club_logo_url
 
 
 INTERNATIONAL_WINDOW_MONTHS = {1, 7, 8, 12}
@@ -96,6 +97,7 @@ def _candidate_payload(club, competition, score, can_complete):
         "club_id": club["id"], "name": club["name"], "country": club["country"],
         "country_code": club["country_code"], "competition": competition["name"],
         "competition_id": competition["id"], "tier": competition["tier"], "logo": club["logo"],
+        "logo_url": club_logo_url(club["logo"]),
         "score": score, "can_complete": can_complete,
     }
 

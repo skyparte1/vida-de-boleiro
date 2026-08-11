@@ -52,7 +52,8 @@
         </div>
         <div class="club-table">
             <div class="table-head">
-                <span>Clube</span><span>Temp.</span><span>J</span><span>G</span><span>A</span><span>Títulos</span></div>
+                <span>Clube</span><span>Temp.</span><span>J</span><span>G</span><span>A</span><span>Títulos</span>
+            </div>
             {% for name, stats in career.clubs.items() %}<div><strong>{{ name }}</strong><span>{{ stats.seasons
                     }}</span><span>{{ stats.matches }}</span><span>{{ stats.goals }}</span><span>{{ stats.assists
                     }}</span><span>{{ stats.titles|length }}</span></div>{% endfor %}

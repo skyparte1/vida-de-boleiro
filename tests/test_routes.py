@@ -34,11 +34,8 @@ class RouteTests(unittest.TestCase):
             self.assertIsInstance(career["club_id"], int)
             self.assertTrue(career["club"])
         page = client.get("/career").get_data(as_text=True)
-        logo_url = re.search(r'src="([^" ]*club_logos/[^" ]+)"', page)
+        logo_url = re.search(r'src="(https://raw\.githubusercontent\.com/skyparte1/vida-de-boleiro-logos/main/clubs/[^" ]+)"', page)
         self.assertIsNotNone(logo_url)
-        logo_response = client.get(logo_url.group(1))
-        self.assertEqual(logo_response.status_code, 200)
-        logo_response.close()
         self.assertEqual(client.get("/career").status_code, 200)
 
     def test_refresh_and_repost_do_not_duplicate_decision(self):
@@ -113,4 +110,5 @@ class RouteTests(unittest.TestCase):
         page = client.get("/career").get_data(as_text=True)
         self.assertIn("Continuar no clube atual", page)
         self.assertIn(event["transfer_candidates"][0]["name"], page)
-        self.assertIn("club_logos/", page)
+        self.assertIn("raw.githubusercontent.com/skyparte1/vida-de-boleiro-logos/main/clubs/", page)
+        self.assertNotIn("static/club_logos/", page)

@@ -1182,6 +1182,11 @@ button:disabled {
   justify-content: center;
   width: 118px !important;
 }
+
+.club-choice__crest[hidden] {
+  display: none !important;
+}
+
 .club-choice__content {
   border-top: 1px solid rgba(154, 176, 160, 0.12);
   display: block !important;

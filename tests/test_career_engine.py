@@ -1,9 +1,9 @@
 import unittest
 from datetime import date
-from pathlib import Path
 
 from career_engine import advance_career, create_career, final_card_svg, resolve_decision, retire
 from database import get_club, get_club_by_name, get_clubs_by_competition, get_current_competition_for_club
+from github_logo_urls import club_logo_url
 from transfer_engine import (
     build_accelerated_transfer_event,
     can_complete_transfer,
@@ -80,7 +80,8 @@ class CareerEngineTests(unittest.TestCase):
         target = event["transfer_candidates"][0]
         self.assertEqual(get_club(target["club_id"])["name"], target["name"])
         self.assertTrue(target["logo"])
-        self.assertTrue((Path(__file__).resolve().parents[1] / "static" / "club_logos" / target["logo"]).is_file())
+        self.assertEqual(target["logo_url"], club_logo_url(target["logo"]))
+        self.assertTrue(target["logo_url"].startswith("https://raw.githubusercontent.com/"))
         self.assertTrue(target["competition"])
         career["pending_event"] = event
         resolve_decision(career, f"accept:{target['club_id']}")
