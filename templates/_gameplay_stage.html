@@ -1,0 +1,48 @@
+<section id="gameplay-stage" class="gameplay-stage" tabindex="-1" aria-live="polite">
+  {% if career.pending_feedback %}
+  {% set feedback = career.pending_feedback %}
+  <section class="event-card event-card--outcome feedback-card {% if feedback.terminal %}is-severe{% endif %}" aria-labelledby="feedback-title">
+    <div class="event-card__top"><span class="event-category">RESULTADO</span><span class="status-tag">{{ feedback.kind|upper }}</span></div>
+    <h2 id="feedback-title">{{ feedback.title }}</h2><p>{{ feedback.text }}</p>
+    {% if feedback.summary %}<ul class="outcome-summary">{% for item in feedback.summary %}<li>{{ item }}</li>{% endfor %}</ul>{% endif %}
+    {% if feedback.changes %}<dl class="feedback-changes">{% for change in feedback.changes %}<div><dt>{{ change.label }}</dt><dd>{% if change.delta is none %}{{ change.before|replace('_', ' ')|title }} → {{ change.after|replace('_', ' ')|title }}{% else %}{{ change.before }} → {{ change.after }} <strong class="{% if change.delta > 0 %}positive{% else %}negative{% endif %}">({% if change.delta > 0 %}+{% endif %}{{ change.delta }})</strong>{% endif %}</dd></div>{% endfor %}</dl>{% else %}<p class="feedback-empty">Nenhum efeito na carreira.</p>{% endif %}
+    {% if feedback.terminal %}<a class="action-menu__continue" href="{{ url_for('final_card') }}">Ver resumo da carreira <span aria-hidden="true">→</span></a>{% else %}<form method="post" action="{{ url_for('consume_feedback') }}"><button class="action-menu__continue">Continuar <span aria-hidden="true">→</span></button></form>{% endif %}
+  </section>
+  {% elif career.get('career_view', 'menu') != 'menu' %}
+  {% set view = career.career_view %}
+  <section class="season-central panel-card" aria-labelledby="season-central-title">
+    <div class="card-title"><div><p class="eyebrow">TEMPORADA {{ season_central.season }}</p><h2 id="season-central-title">{% if view == 'central' %}Central da Temporada{% elif view == 'standings' %}Classificação{% elif view == 'calendar' %}Calendário{% elif view == 'objectives' %}Objetivos{% else %}Histórico da temporada{% endif %}</h2></div><span class="status-tag">DADOS REAIS</span></div>
+    {% if view == 'central' %}
+      <div class="season-competition-grid">{% for item in season_central.competitions %}<article><small>{{ item.type|upper }}</small><strong>{{ item.name }}</strong>{% if item.type == 'Liga' %}<span>{{ item.position }}º · {{ item.points }} pts · {{ item.played }} jogos</span>{% else %}<span>{{ item.status|replace('_', ' ')|upper }}{% if item.stage_reached %} · {{ item.stage_reached }}{% endif %}</span>{% endif %}</article>{% else %}<p class="feedback-empty">Nenhuma competição disponível nesta temporada.</p>{% endfor %}</div>
+      {% if season_central.qualified %}<p class="season-qualified"><b>Próxima temporada:</b> classificado para {{ season_central.qualified|join(', ')|replace('_', ' ') }}.</p>{% endif %}
+    {% elif view == 'standings' %}
+      {% if season_central.table %}<div class="season-table-wrap"><table class="season-table"><thead><tr><th>#</th><th>Clube</th><th>J</th><th>V</th><th>E</th><th>D</th><th>SG</th><th>PTS</th></tr></thead><tbody>{% for row in season_central.table %}<tr class="{% if row.club_id == career.club_id %}is-player-club{% endif %} {% if season_central.zones.promotion and row.position <= season_central.zones.promotion %}is-promotion{% elif season_central.zones.continental and row.position <= season_central.zones.continental %}is-continental{% elif season_central.zones.relegation and row.position > season_central.table|length - season_central.zones.relegation %}is-relegation{% endif %}"><td>{{ row.position }}</td><td>{{ row.club_name }}</td><td>{{ row.played }}</td><td>{{ row.wins }}</td><td>{{ row.draws }}</td><td>{{ row.losses }}</td><td>{{ row.goal_difference }}</td><td><b>{{ row.points }}</b></td></tr>{% endfor %}</tbody></table></div><p class="season-legend">Linhas discretas indicam acesso/classificação e rebaixamento, conforme as regras desta liga.</p>{% else %}<p class="feedback-empty">Classificação indisponível para esta competição.</p>{% endif %}
+    {% elif view == 'calendar' %}
+      <div class="season-schedule"><div><h3>Últimos jogos</h3>{% for item in season_central.schedule.recent %}<p>R{{ item.round }} · {{ item.home and 'Casa' or 'Fora' }} · {{ item.opponent }} {% if item.score %}<b>{{ item.score[0] if item.home else item.score[1] }} × {{ item.score[1] if item.home else item.score[0] }}</b>{% endif %}</p>{% else %}<p>Nenhuma partida registrada.</p>{% endfor %}</div><div><h3>Próximos jogos</h3>{% for item in season_central.schedule.upcoming %}<p>R{{ item.round }} · {{ item.home and 'Casa' or 'Fora' }} · {{ item.opponent }}</p>{% else %}<p>Nenhum próximo jogo disponível.</p>{% endfor %}</div></div>
+    {% elif view == 'objectives' %}
+      <article class="season-objective"><small>OBJETIVO DO CLUBE</small><h3>{{ season_central.objective.label }}</h3><p>Situação: <b>{{ season_central.objective.status }}</b></p></article><div class="season-stat-line"><span>Jogos <b>{{ season_central.stats.matches }}</b></span><span>Gols <b>{{ season_central.stats.goals }}</b></span><span>Assistências <b>{{ season_central.stats.assists }}</b></span></div>
+    {% else %}
+      <ol class="season-history">{% for item in season_central.history %}<li><small>{{ item.kind|upper }}</small>{{ item.text }}</li>{% else %}<li>Nenhum marco registrado ainda.</li>{% endfor %}</ol>
+    {% endif %}
+    <div class="season-central-actions">{% if view == 'central' %}{% for target, label in [('standings', 'Classificação'), ('calendar', 'Calendário'), ('objectives', 'Objetivos'), ('history', 'Histórico')] %}<form method="post" action="{{ url_for('season_central') }}"><button name="view" value="{{ target }}">{{ label }}</button></form>{% endfor %}{% endif %}<form method="post" action="{{ url_for('season_central') }}"><button class="action-menu__continue" name="view" value="{{ 'central' if view != 'central' else 'menu' }}">{{ 'Voltar à Central' if view != 'central' else 'Voltar' }} <span aria-hidden="true">→</span></button></form></div>
+  </section>
+  {% elif not career.pending_event %}
+  <section class="action-menu panel-card" aria-labelledby="action-menu-title">
+    <div class="card-title"><div><p class="eyebrow">GESTÃO DO JOGADOR</p><h2 id="action-menu-title">O que você vai fazer?</h2></div><span class="status-tag">AÇÕES DA TEMPORADA</span></div>
+    <div class="action-menu__grid">
+      {% for category, label in [('training', 'Treinar'), ('rest', 'Descansar'), ('career', 'Carreira'), ('locker_room', 'Vestiário'), ('media', 'Mídia'), ('personal', 'Vida pessoal')] %}
+      {% set used = career.season_actions_used.get(category, false) %}<details class="action-group {% if used %}is-used{% endif %}" {% if category == 'training' and not used %}open{% endif %}><summary>{{ label }}<span>{% if used %}✓{% else %}+{% endif %}</span></summary><div>{% if used %}<small class="action-group__used">Concluído nesta temporada.</small>{% endif %}{% for action in player_actions.get(category, {}).values() %}<form method="post" action="{{ url_for('player_action') }}"><input type="hidden" name="category" value="{{ category }}"><button name="action" value="{{ action.id }}" {% if used %}disabled{% endif %}>{{ action.label }}</button></form>{% else %}<small>Indisponível no momento.</small>{% endfor %}</div></details>
+      {% endfor %}
+      <form method="post" action="{{ url_for('season_central') }}"><button class="action-group__season" name="view" value="central">Temporada <span aria-hidden="true">→</span></button></form>
+      <form method="post" action="{{ url_for('advance_career_week') }}"><button class="action-menu__continue">{{ 'Continuar carreira' if career.mode == 'realistic' else 'Simular temporada' }} <span aria-hidden="true">→</span></button></form>
+    </div>
+  </section>
+  {% else %}
+  {% set event_labels = {'outcome': 'RESULTADO', 'training': 'TREINO', 'match': 'PARTIDA', 'recovery': 'RECUPERAÇÃO', 'transfer_market': 'TRANSFERÊNCIA', 'transfer_interest': 'MERCADO', 'season_final': 'FINAL', 'season_summary': 'TEMPORADA', 'dressing_room': 'VESTIÁRIO', 'media': 'MÍDIA', 'personal_life': 'VIDA PESSOAL', 'scandal': 'ESCÂNDALO'} %}
+  <section class="event-card event-card--{{ career.pending_event.type }}" data-event-type="{{ career.pending_event.type }}" aria-labelledby="event-title">
+    <div class="event-card__top"><span class="event-category">{{ event_labels.get(career.pending_event.type, 'ACONTECIMENTO') }}</span><span class="status-tag status-tag--warning">DECISÃO PENDENTE</span></div>
+    <h2 id="event-title">{{ career.pending_event.title }}</h2><p>{{ career.pending_event.text }}</p>
+    <form method="post" action="{{ url_for('decide') }}" class="event-choices"><input type="hidden" name="event_id" value="{{ career.pending_event.id }}">{% if career.pending_event.transfer_candidates %}<div class="transfer-candidates">{% for candidate in career.pending_event.transfer_candidates %}<button class="transfer-candidate" name="choice" value="accept:{{ candidate.club_id }}" {% if not candidate.can_complete %}disabled{% endif %}>{% if candidate.logo_url %}<img src="{{ candidate.logo_url }}" alt="Escudo do {{ candidate.name }}" onerror="this.hidden=true">{% endif %}<span><strong>{{ candidate.name }}</strong><small>{{ candidate.competition }}<br>{{ candidate.country }}</small></span></button>{% endfor %}</div>{% endif %}{% for choice in career.pending_event.choices if not choice.id.startswith('accept:') %}<button name="choice" value="{{ choice.id }}">{{ choice.label }} <span aria-hidden="true">→</span></button>{% endfor %}</form>
+  </section>
+  {% endif %}
+</section>

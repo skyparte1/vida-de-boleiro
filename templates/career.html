@@ -2,15 +2,15 @@
 {% block body_class %}page-career{% endblock %}
 {% block content %}
 <section class="career-hero">
+  {% if current_club and current_club.logo_url %}<img class="career-hero__crest" src="{{ current_club.logo_url }}" alt="Escudo do {{ current_club.name }}" onerror="this.hidden=true">{% endif %}
   <div class="career-identity">
     <p class="eyebrow">{{ career.calendar.date }} · TEMPORADA {{ career.calendar.season }} · {{ 'MODO REALISTA' if
       career.mode == 'realistic' else 'MODO ACELERADO' }}</p>
     <h1>{{ career.player.name }}</h1>
-    <p class="career-identity__meta"><span>{{ career.player.position }}</span><span>{{ career.club }}</span><span>{{
-        career.player.country }}</span></p>
+    <p class="career-identity__meta"><span id="hud-club">{{ career.club }}</span><span>{{ career.player.position }}</span><span id="hud-status">{{ career.squad_status_reason }}</span><span>{{ career.player.country }}</span></p>
   </div>
   <div class="overall-display" data-metric="overall" data-value="{{ career.player.overall }}">
-    <span>OVERALL</span><strong data-count="{{ career.player.overall }}">{{ career.player.overall
+    <span>OVERALL</span><strong id="hud-overall" data-count="{{ career.player.overall }}">{{ career.player.overall
       }}</strong><small>Máximo {{
       career.player.max_overall }}</small></div>
 </section>
@@ -19,8 +19,24 @@
     href="#estatisticas">Estatísticas</a><a href="#historico">Histórico</a></nav>
 <div class="dashboard-layout" id="painel">
   <div class="dashboard-main">
+    <section class="gameplay-overview">
+      <article class="panel-card compact-card"><p class="eyebrow">PRÓXIMO COMPROMISSO</p><h2>{% if career.pending_event and career.pending_event.type == 'match' %}{{ career.pending_event.title }}{% else %}{{ 'Próximo acontecimento relevante' if career.mode == 'realistic' else 'Próxima temporada' }}{% endif %}</h2><p>{% if career.match_state %}{{ career.club }} × {{ career.match_state.opponent }} · {{ career.match_state.competition }}{% else %}Semana {{ career.calendar.week }} · {{ 'avance para descobrir o próximo passo' if career.mode == 'realistic' else 'simulação condensada disponível' }}{% endif %}</p></article>
+      <article class="panel-card compact-card"><p class="eyebrow">TEMPORADA {{ career.calendar.season }}</p>{% if season_central.league %}<h2>{{ season_central.league.name }}</h2><p>{{ season_central.league.position }}º · {{ season_central.league.points }} pts · {{ season_central.league.played }} jogos</p>{% else %}<h2>{{ career.season_stats.matches }} jogos · {{ career.season_stats.goals }} gols</h2>{% endif %}<form method="post" action="{{ url_for('season_central') }}"><button class="season-link" name="view" value="central">Ver temporada →</button></form></article>
+    </section>
+    {% if false %}
+    <section class="action-menu panel-card" aria-labelledby="action-menu-title">
+      <div class="card-title"><div><p class="eyebrow">GESTÃO DO JOGADOR</p><h2 id="action-menu-title">O que você vai fazer?</h2></div><span class="status-tag">AÇÕES DA TEMPORADA</span></div>
+      <div class="action-menu__grid">
+        {% for category, label in [('training', 'Treinar'), ('rest', 'Descansar'), ('career', 'Carreira'), ('locker_room', 'Vestiário'), ('media', 'Mídia'), ('personal', 'Vida pessoal')] %}
+        {% set used = career.season_actions_used.get(category, false) %}<details class="action-group {% if used %}is-used{% endif %}" {% if category == 'training' and not used %}open{% endif %}><summary>{{ label }}<span>{% if used %}✓{% else %}+{% endif %}</span></summary><div>{% if used %}<small class="action-group__used">Concluído nesta temporada.</small>{% endif %}{% for action in player_actions.get(category, {}).values() %}<form method="post" action="{{ url_for('player_action') }}"><input type="hidden" name="category" value="{{ category }}"><button name="action" value="{{ action.id }}" {% if used %}disabled{% endif %}>{{ action.label }}</button></form>{% else %}<small>Indisponível no momento.</small>{% endfor %}</div></details>
+        {% endfor %}
+        <details class="action-group"><summary>Temporada<span>+</span></summary><div><p>{{ career.season_stats.matches }} jogos, {{ career.season_stats.goals }} gols e {{ career.season_stats.assists }} assistências nesta temporada.</p><p>A Central da Temporada chegará em atualização futura.</p></div></details>
+        <form method="post" action="{{ url_for('advance_career_week') }}"><button class="action-menu__continue" {% if career.pending_event %}disabled{% endif %}>{{ 'Continuar carreira' if career.mode == 'realistic' else 'Simular temporada' }} <span aria-hidden="true">→</span></button></form>
+      </div>
+    </section>
+    {% endif %}
     {% if career.pending_event %}
-    {% set event_labels = {'training': 'TREINO', 'match': 'PARTIDA', 'recovery': 'RECUPERAÇÃO', 'transfer_market':
+    {% set event_labels = {'outcome': 'RESULTADO', 'training': 'TREINO', 'match': 'PARTIDA', 'recovery': 'RECUPERAÇÃO', 'transfer_market':
     'TRANSFERÊNCIA', 'transfer_interest': 'MERCADO', 'season_final': 'FINAL', 'season_summary': 'TEMPORADA',
     'dressing_room': 'VESTIÁRIO', 'media': 'MÍDIA', 'personal_life': 'VIDA PESSOAL', 'injury': 'LESÃO', 'call_up':
     'SELEÇÃO', 'title': 'TÍTULO', 'scandal': 'ESCÂNDALO'} %}
@@ -37,6 +53,7 @@
           career.calendar.week }}</span></div>
       <h2 id="event-title">{{ career.pending_event.title }}</h2>
       <p>{{ career.pending_event.text }}</p>
+      {% if career.pending_event.outcome_summary %}<ul class="outcome-summary">{% for item in career.pending_event.outcome_summary %}<li>{{ item }}</li>{% endfor %}</ul>{% endif %}
       {% if career.pending_event.type == 'match' %}{% set stage = career.pending_event.stage %}{% set match =
       career.match_state %}{% set stage_order = ['pre_match', 'first_half', 'player_moment', 'halftime', 'second_half',
       'final'] %}{% set current_index = stage_order.index(stage) if stage in stage_order else -1 %}
@@ -68,19 +85,8 @@
           <span aria-hidden="true">→</span></button>{% endfor %}{% endif %}</form>
       <p class="event-lock" role="status">Resolva este acontecimento para continuar a carreira.</p>
     </section>
-    {% else %}<section class="advance-card">
-      <div>
-        <p class="eyebrow">PRÓXIMO PASSO</p>
-        <h2>{{ 'Continue construindo a sua história.' if career.mode == 'realistic' else 'Simule a próxima temporada.'
-          }}</h2>
-        <p>{{ 'O próximo acontecimento relevante pode trazer treino, partida ou uma mudança de rumo.' if career.mode ==
-          'realistic' else 'Partidas comuns serão processadas e apenas os acontecimentos importantes serão
-          apresentados.' }}</p>
-      </div>
-      <form method="post" action="{{ url_for('advance_career_week') }}"><button class="primary-action"><span>{{
-            'Continuar carreira' if career.mode == 'realistic' else 'Simular temporada' }}</span><span
-            aria-hidden="true">→</span></button></form>
-    </section>{% endif %}
+    {% endif %}
+    {% include "_gameplay_stage.html" %}
     <section class="panel-card status-card">
       <div class="card-title">
         <div>
@@ -90,13 +96,13 @@
       </div>
       <div class="status-bars">
         <div>
-          <div><span>Forma</span><strong data-count="{{ career.player.form }}">{{ career.player.form }}</strong></div>
+          <div><span>Forma</span><strong id="hud-form" data-count="{{ career.player.form }}">{{ career.player.form }}</strong></div>
           <div class="status-progress" role="progressbar" aria-label="Forma" aria-valuemin="0" aria-valuemax="100"
             aria-valuenow="{{ career.player.form }}" data-metric="form" data-value="{{ career.player.form }}"><span
               style="--meter: {{ career.player.form }}%"></span></div>
         </div>
         <div>
-          <div><span>Condicionamento</span><strong data-count="{{ 100 - career.player.fatigue }}">{{ 100 -
+          <div><span>Condicionamento</span><strong id="hud-fitness" data-count="{{ 100 - career.player.fatigue }}">{{ 100 -
               career.player.fatigue }}</strong></div>
           <div class="status-progress status-progress--warning" role="progressbar" aria-label="Condicionamento"
             aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ 100 - career.player.fatigue }}"
@@ -104,7 +110,7 @@
               style="--meter: {{ 100 - career.player.fatigue }}%"></span></div>
         </div>
         <div>
-          <div><span>Moral</span><strong data-count="{{ career.player.morale }}">{{ career.player.morale }}</strong>
+          <div><span>Moral</span><strong id="hud-morale" data-count="{{ career.player.morale }}">{{ career.player.morale }}</strong>
           </div>
           <div class="status-progress status-progress--info" role="progressbar" aria-label="Moral" aria-valuemin="0"
             aria-valuemax="100" aria-valuenow="{{ career.player.morale }}" data-metric="morale"

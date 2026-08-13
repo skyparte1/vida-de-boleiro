@@ -9,10 +9,12 @@ from career_engine import (  # noqa: F401
     advance_week,
     club_stats,
     create_career,
+    available_player_actions,
     ensure_career_state,
     final_card_svg,
     market_value,
     resolve_decision,
+    perform_player_action,
     retire,
     update_market_value,
 )

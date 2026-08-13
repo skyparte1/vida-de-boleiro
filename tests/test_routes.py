@@ -61,8 +61,10 @@ class RouteTests(unittest.TestCase):
         with client.session_transaction() as flask_session:
             career = get(flask_session["career_id"])
             career["pending_event"].pop("id")
-        self.assertEqual(client.post("/career/decision", data={"choice": "weak_foot"}).status_code, 302)
+            legacy_choice = career["pending_event"]["choices"][0]["id"]
+        self.assertEqual(client.post("/career/decision", data={"choice": legacy_choice}).status_code, 302)
         self.assertIsNone(career["pending_event"])
+        self.assertIsNotNone(career["pending_feedback"])
 
     def test_legacy_career_without_club_id_is_resolved_in_memory(self):
         from session_store import get
@@ -94,6 +96,19 @@ class RouteTests(unittest.TestCase):
         self.assertEqual(client.get("/career/final-card").status_code, 200)
         self.assertEqual(client.get("/career/final-card.svg").status_code, 200)
 
+    def test_deceased_career_redirects_to_and_renders_final_card(self):
+        from career_lifecycle import die
+        from session_store import get
+        client = self.create_client_career("realistic")
+        with client.session_transaction() as flask_session:
+            career = get(flask_session["career_id"])
+            self.assertTrue(die(career, "Acidente de teste.", "fatal-test"))
+        self.assertEqual(client.get("/career").status_code, 302)
+        self.assertEqual(client.post("/career/advance-week").status_code, 302)
+        page = client.get("/career/final-card").get_data(as_text=True)
+        self.assertIn("Falecido aos", page)
+        self.assertEqual(client.get("/career/final-card.svg").status_code, 200)
+
     def test_transfer_event_renders_database_logos_and_choices(self):
         from session_store import get
         client = self.create_client_career("accelerated")
@@ -112,3 +127,25 @@ class RouteTests(unittest.TestCase):
         self.assertIn(event["transfer_candidates"][0]["name"], page)
         self.assertIn("raw.githubusercontent.com/skyparte1/vida-de-boleiro-logos/main/clubs/", page)
         self.assertNotIn("static/club_logos/", page)
+
+    def test_gameplay_action_menu_renders_and_accepts_one_action_per_period(self):
+        client = self.create_client_career("realistic")
+        page = client.get("/career").get_data(as_text=True)
+        self.assertIn("O que você vai fazer?", page)
+        self.assertIn("Treinar", page)
+        self.assertEqual(client.post("/career/action", data={"category": "training", "action": "general"}).status_code, 302)
+        self.assertEqual(client.post("/career/action", data={"category": "rest", "action": "rest"}).status_code, 302)
+
+    def test_gameplay_fetch_returns_a_stage_and_feedback_without_new_route(self):
+        client = self.create_client_career("accelerated")
+        response = client.post("/career/action", data={"category": "training", "action": "finishing"}, headers={"Accept": "application/json"})
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["state"], "feedback")
+        self.assertIn('id="gameplay-stage"', payload["html"])
+        self.assertIn("Fadiga", payload["html"])
+        follow_up = client.post("/career/feedback/continue", headers={"Accept": "application/json"})
+        self.assertEqual(follow_up.status_code, 200)
+        self.assertEqual(follow_up.get_json()["state"], "menu")
+        self.assertEqual(client.get("/career").request.path, "/career")

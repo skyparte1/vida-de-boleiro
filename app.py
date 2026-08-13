@@ -1,16 +1,18 @@
+import os
 import random
 
-from flask import Flask, abort, redirect, render_template, request, session, url_for
+from flask import Flask, abort, jsonify, redirect, render_template, request, session, url_for
 
 from database import get_club, get_club_by_name, get_clubs_by_country, get_country_by_name
 from football_data import countries
 from github_logo_urls import club_logo_url
+from season_central import build_season_central
 from session_store import create, discard, get
-from simulation import advance_career, create_career, ensure_career_state, final_card_svg, resolve_decision, retire
+from simulation import advance_career, available_player_actions, create_career, ensure_career_state, final_card_svg, perform_player_action, resolve_decision, retire
 
 
 app = Flask(__name__)
-app.config["SECRET_KEY"] = "local-development-only-change-this-before-deploying"
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "local-development-only-change-this-before-deploying")
 
 
 DATABASE_COUNTRY_NAMES = {
@@ -82,6 +84,17 @@ def active_career():
     return career
 
 
+def career_stage_response(career):
+    """Resposta única para fetch; o fallback continua sendo PRG para /career."""
+    if request.accept_mimetypes.best == "application/json":
+        return jsonify(ok=True, state="feedback" if career.get("pending_feedback") else "event" if career.get("pending_event") else "menu",
+                       html=render_template("_gameplay_stage.html", career=career, player_actions=available_player_actions(career), season_central=build_season_central(career)),
+                       hud={"overall": career["player"]["overall"], "form": career["player"]["form"],
+                            "morale": career["player"]["morale"], "fitness": 100 - career["player"]["fatigue"],
+                            "club": career["club"], "squad_status": career.get("squad_status_reason", "")})
+    return redirect(url_for("career"))
+
+
 @app.get("/")
 def new_career():
     return render_template("new_career.html", countries=countries())
@@ -118,9 +131,25 @@ def career():
     current = active_career()
     if not current:
         return redirect(url_for("new_career"))
-    if current["status"] == "finished":
+    if current["status"] in {"finished", "deceased"} and not current.get("pending_feedback"):
         return redirect(url_for("final_card"))
-    return render_template("career.html", career=current, current_club=current_club(current))
+    return render_template("career.html", career=current, current_club=current_club(current), player_actions=available_player_actions(current), season_central=build_season_central(current))
+
+
+@app.post("/career/season-central")
+def season_central():
+    current = active_career()
+    if not current:
+        return redirect(url_for("new_career"))
+    current["career_view"] = request.form.get("view", "central")
+    if current["career_view"] not in {"menu", "central", "standings", "calendar", "objectives", "history"}:
+        abort(400)
+    return career_stage_response(current)
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 
 
 @app.post("/career/advance-week")
@@ -128,19 +157,48 @@ def advance_career_week():
     current = active_career()
     if not current:
         return redirect(url_for("new_career"))
+    if current["status"] != "active":
+        return redirect(url_for("final_card"))
     if not current["pending_event"]:
         advance_career(current)
-    return redirect(url_for("career"))
+    return career_stage_response(current)
 
 
 @app.post("/career/decision")
 def decide():
     current = active_career()
+    if current and current["status"] != "active":
+        return redirect(url_for("final_card"))
     if not current or not current["pending_event"]:
         abort(400)
     if not resolve_decision(current, request.form.get("choice", ""), request.form.get("event_id") or None):
         abort(400)
-    return redirect(url_for("career"))
+    return career_stage_response(current)
+
+
+@app.post("/career/action")
+def player_action():
+    current = active_career()
+    if not current or current["status"] != "active":
+        return redirect(url_for("career"))
+    if not perform_player_action(current, request.form.get("category", ""), request.form.get("action", "")):
+        abort(400)
+    return career_stage_response(current)
+
+
+@app.post("/career/feedback/continue")
+def consume_feedback():
+    current = active_career()
+    if not current or not current.get("pending_feedback"):
+        abort(400)
+    current["pending_feedback"] = None
+    if (current.get("pending_event") or {}).get("type") == "outcome":
+        current["pending_event"] = None
+        from career_engine import _promote_next_event
+        _promote_next_event(current)
+    if current["status"] in {"finished", "deceased"}:
+        return redirect(url_for("final_card"))
+    return career_stage_response(current)
 
 
 @app.post("/career/retire")
@@ -148,10 +206,15 @@ def retire_career():
     current = active_career()
     if not current:
         return redirect(url_for("new_career"))
+    if current["status"] != "active":
+        return redirect(url_for("final_card"))
     if current["player"]["age"] < 30:
         abort(400)
+    from feedback_engine import feedback_snapshot, set_pending_feedback
+    before = feedback_snapshot(current)
     retire(current, "Você decidiu encerrar a carreira profissional.")
-    return redirect(url_for("final_card"))
+    set_pending_feedback(current, "terminal", "Fim da carreira", current["retirement_reason"], before, terminal=True)
+    return career_stage_response(current)
 
 
 @app.get("/career/final-card")
@@ -159,7 +222,7 @@ def final_card():
     current = active_career()
     if not current:
         return redirect(url_for("new_career"))
-    if current["status"] != "finished":
+    if current["status"] not in {"finished", "deceased"}:
         return redirect(url_for("career"))
     return render_template("career_card.html", career=current)
 
@@ -167,7 +230,7 @@ def final_card():
 @app.get("/career/final-card.svg")
 def download_final_card():
     current = active_career()
-    if not current or current["status"] != "finished":
+    if not current or current["status"] not in {"finished", "deceased"}:
         abort(404)
     return app.response_class(
         final_card_svg(current), mimetype="image/svg+xml",
@@ -189,7 +252,7 @@ def starting_clubs():
 if __name__ == "__main__":
     app.run(
         host="127.0.0.1",
-        port=5000,
-        debug=True,
+        port=int(os.environ.get("PORT", 5000)),
+        debug=os.environ.get("FLASK_DEBUG") == "1",
         use_reloader=True
     )

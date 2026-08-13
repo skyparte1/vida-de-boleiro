@@ -438,6 +438,55 @@ document.querySelectorAll('form:not(#career-form)').forEach((form) => form.addEv
 
 const dashboard = document.querySelector('.page-career');
 if (dashboard) {
+  const updateCareerHud = (hud) => {
+    const values = { overall: hud.overall, form: hud.form, morale: hud.morale, fitness: hud.fitness };
+    Object.entries(values).forEach(([key, value]) => {
+      const element = document.querySelector(`#hud-${key}`);
+      if (element) { element.textContent = value; element.dataset.count = value; }
+    });
+    const club = document.querySelector('#hud-club');
+    const status = document.querySelector('#hud-status');
+    if (club) club.textContent = hud.club;
+    if (status) status.textContent = hud.squad_status;
+  };
+
+  document.addEventListener('submit', async (event) => {
+    const form = event.target;
+    if (!form.closest('#gameplay-stage') || !window.fetch) return;
+    event.preventDefault();
+    const submitter = event.submitter;
+    if (submitter) submitter.disabled = true;
+    try {
+      const formData = new FormData(form);
+      if (submitter?.name) formData.set(submitter.name, submitter.value);
+      const response = await fetch(form.getAttribute('action') || window.location.href, {
+        method: form.method || 'POST',
+        headers: { Accept: 'application/json' },
+        body: formData,
+        credentials: 'same-origin',
+      });
+      if (!response.ok) throw new Error('request failed');
+      const data = await response.json();
+      const stage = document.querySelector('#gameplay-stage');
+      if (!data.ok || !stage) throw new Error('invalid response');
+      stage.outerHTML = data.html;
+      updateCareerHud(data.hud);
+      const nextStage = document.querySelector('#gameplay-stage');
+      nextStage?.focus();
+      history.replaceState(null, '', '/career');
+    } catch (_) {
+      const stage = document.querySelector('#gameplay-stage');
+      if (stage) {
+        const error = document.createElement('p');
+        error.className = 'gameplay-error';
+        error.setAttribute('role', 'alert');
+        error.textContent = 'Não foi possível concluir a ação. Tente novamente.';
+        stage.prepend(error);
+      }
+      if (submitter) submitter.disabled = false;
+    }
+  });
+
   const metricKey = 'vdb:career-metrics';
   let previous = {};
   try { previous = JSON.parse(sessionStorage.getItem(metricKey) || '{}'); } catch (_) {}

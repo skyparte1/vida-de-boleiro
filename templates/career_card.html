@@ -6,7 +6,7 @@
     <div>
         <div>
             <h1>{{ career.player.name }}</h1>
-            <p>{{ career.player.country }} · {{ career.player.position }} · {{ career.retirement_reason }}</p>
+            <p>{{ career.player.country }} · {{ career.player.position }} · {% if career.status == 'deceased' %}Falecido aos {{ career.death.age }} anos{% if career.death.reason %}: {{ career.death.reason }}{% endif %}{% else %}{{ career.retirement_reason }}{% endif %}</p>
         </div>
         <div class="overall-display"><span>OVR MÁXIMO</span><strong>{{ career.player.max_overall }}</strong><small>Aos
                 {{ career.player.age }} anos</small></div>

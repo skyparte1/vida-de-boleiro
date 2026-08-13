@@ -201,13 +201,20 @@ def _history(career, kind, text):
 
 def resolve_transfer_decision(career, event, choice):
     """Aplica uma escolha de transferência já validada pelo motor de eventos."""
+    if career.get("status") != "active":
+        return False
     candidates = {item["club_id"]: item for item in event.get("transfer_candidates", [])}
     if choice == "stay":
+        career["transfer_feedback"] = {
+            "title": "Você decidiu ficar",
+            "text": f"Você recusa a proposta e escolhe seguir no {career['club']} para a próxima fase da carreira.",
+        }
         _history(career, "transferência", f"Você decidiu permanecer no {career['club']}.")
         return True
     if choice in {"acknowledge", "reject"}:
         action = "manteve o foco" if choice == "acknowledge" else "recusou o contato"
         _history(career, "transferência", f"Você {action} após o interesse de {event['transfer_candidates'][0]['name']}.")
+        career["transfer_feedback"] = {"title": "Interesse registrado", "text": f"Você {action} após o contato de {event['transfer_candidates'][0]['name']}."}
         return True
     if not choice.startswith("accept:"):
         return False
@@ -222,9 +229,18 @@ def resolve_transfer_decision(career, event, choice):
     if not club or club["id"] == career.get("club_id"):
         return False
     old_club = career["club"]
+    old_status = career.get("squad_status")
     career["club_id"] = club["id"]
     career["club"] = club["name"]
     career["clubs"].setdefault(club["name"], {"seasons": 0, "matches": 0, "goals": 0, "assists": 0, "yellow_cards": 0, "red_cards": 0, "titles": []})
+    from career_engine import recalculate_squad_status
+    recalculate_squad_status(career, force=True)
     career["player"]["morale"] = min(100, career["player"]["morale"] + 6)
     _history(career, "transferência", f"Você deixou {old_club} para atuar no {club['name']}.")
+    career["transfer_feedback"] = {
+        "title": "Novo capítulo",
+        "text": f"Você aceita a proposta do {club['name']} e deixa o {old_club}. A mudança abre uma nova fase na sua carreira.",
+        "from_club": old_club, "to_club": club["name"], "previous_status": old_status,
+        "new_status": career.get("squad_status"),
+    }
     return True

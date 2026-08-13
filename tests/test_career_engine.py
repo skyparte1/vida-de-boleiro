@@ -135,7 +135,8 @@ class CareerEngineTests(unittest.TestCase):
         self.assertGreaterEqual(career["player"]["matches"], 1)
         events = [career["pending_event"], *career["event_queue"]]
         self.assertEqual(sum(item["type"] == "training" for item in events), 1)
-        self.assertEqual(sum(item["type"] == "season_final" for item in events), 1)
+        self.assertEqual(sum(item["type"] == "season_final" for item in events), 0)
+        self.assertEqual(career["season_competitions"]["league"]["status"], "finished")
         self.assertEqual(events[-1]["type"], "season_summary")
         while career["pending_event"] and career["pending_event"]["type"] != "season_summary":
             self.resolve_current(career)
